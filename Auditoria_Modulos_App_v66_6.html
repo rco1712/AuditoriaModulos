@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Clósets Vera — Auditoría de Módulos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f4f6;color:#172033}
+header{background:#111827;color:#fff;padding:18px;text-align:center}
+header h1{margin:0;font-size:22px}
+.container{max-width:800px;margin:auto;padding:14px}
+.card{background:#fff;border-radius:14px;padding:18px;margin-bottom:15px;box-shadow:0 3px 12px rgba(0,0,0,.08)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.small{font-size:13px;color:#667085}
+button{border:0;border-radius:10px;padding:12px 15px;font-size:16px;cursor:pointer}
+.primary{width:100%;background:#111827;color:#fff}
+.logout{background:#dc2626;color:#fff}
+.back{background:#e5e7eb;color:#111827}
+.module-grid,.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.module{color:#fff;border-radius:14px;padding:18px;min-height:100px;text-align:left;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.12)}
+.module b{display:block;font-size:19px;margin-bottom:7px}.moduleVisual{width:62px;height:62px;border-radius:16px;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.28);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;margin-bottom:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}.moduleVisual .city{font-size:12px;line-height:1.05;text-align:center;opacity:.95}.moduleVisual .initial{font-size:25px;line-height:1}.moduleVisual.mty{flex-direction:column;gap:1px}.moduleVisual.gdl{flex-direction:column;gap:1px}.moduleVisual.salt{flex-direction:column;gap:1px}
+.module span{font-size:13px;opacity:.9}
+.saltillo{background:#1976d2}.escobedo{background:#2e7d32}.apodaca{background:#ef6c00}.tlaquepaque{background:#7b1fa2}.guadalajara{background:#c62828}
+.menu-item{background:#f8fafc;border:1px solid #e4e7ec;border-radius:12px;padding:18px;text-align:left;font-weight:bold;color:#172033;width:100%}
+.notice{background:#eef4f8;border-left:4px solid #1976d2;padding:12px;border-radius:8px}
+.hidden{display:none!important}
+input,select{width:100%;padding:12px;margin:8px 0;border:1px solid #ccc;border-radius:9px;font-size:16px}
+.error{color:#dc2626;font-weight:bold;margin-top:10px}
+.success{color:#15803d;font-weight:bold;margin-top:10px}
+h3{margin-top:4px}
+.item{border:1px solid #e4e7ec;border-radius:12px;padding:11px 12px;margin:7px 0;background:#fff}.quickName{font-size:16px;font-weight:700}.quickMeta{font-size:12px;color:#667085;margin-top:3px}.quickQty{width:105px!important;margin:0!important;padding:10px!important}.quickCurrent{font-size:12px;color:#15803d;font-weight:600;margin-top:3px}
+.qty{font-size:24px;font-weight:bold;margin-top:7px}.movementIn{color:#15803d;font-weight:700}.movementOut{color:#dc2626;font-weight:700}
+@media(max-width:600px){.container{padding:10px}.card{padding:15px}.module-grid,.menu-grid{grid-template-columns:1fr 1fr}.module{min-height:90px;padding:14px}.module b{font-size:17px}}
+.inventoryCategoryTitle{font-size:18px;font-weight:800;margin:18px 0 8px;padding:10px 12px;background:#f1f5f9;border-radius:10px;border-left:5px solid #64748b}.categoryButtons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.categoryBtn,.materialBtn{border:1px solid #cbd5e1;background:#fff;border-radius:12px;padding:12px;text-align:left;font-size:16px;cursor:pointer}.categoryBtn.selected,.materialBtn.selected{outline:3px solid #94a3b8;background:#eef2ff}.materialBtn{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:7px}.materialBtn span{font-size:13px;opacity:.7;margin-left:8px}.brandCard{display:flex;align-items:center;gap:14px;padding:16px 18px}.brandLogo{width:68px;height:68px;border:5px solid #2563eb;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;letter-spacing:-8px;padding-right:8px;background:#fff;box-shadow:0 2px 7px rgba(0,0,0,.12)}.cvBlue{color:#2563eb}.cvRed{color:#ef4444}.brandName{font-size:26px;font-weight:900;letter-spacing:.5px;color:#111827}.brandSub{font-size:15px;font-weight:700;color:#475467;margin-top:2px}@media(max-width:600px){.brandName{font-size:22px}.brandLogo{width:62px;height:62px;font-size:31px}}
+
+.mermaHelp{margin-top:10px;padding:10px 12px;border-radius:12px;background:#eef6ff;border-left:4px solid #1976d2;font-size:.9rem}.mermaStockGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mermaStockGrid .notice{margin:0}.card h2{letter-spacing:.2px}#scrapKindButtons .categoryBtn{font-weight:700;border-width:2px}#scrapKindButtons .categoryBtn.selected{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.12)}#scrapPieceButtons .categoryBtn.selected,#scrapReasonButtons .categoryBtn.selected,#scrapColorButtons .categoryBtn.selected,#scrapMirrorButtons .categoryBtn.selected{box-shadow:0 3px 10px rgba(0,0,0,.12);font-weight:800}
+
+#scrapKindButtons .categoryBtn[data-kind="material"]{background:#eef5ff}
+#scrapKindButtons .categoryBtn[data-kind="melaminaPieza"]{background:#fff8e6}
+#scrapKindButtons .categoryBtn[data-kind="maderaPieza"]{background:#f5efe8}
+#scrapKindButtons .categoryBtn[data-kind="cajonera"]{background:#eaf8ef}
+#scrapKindButtons .categoryBtn[data-kind="cajonPieza"]{background:#fff0f5}
+#scrapKindButtons .categoryBtn[data-kind="especial"]{background:#f1edff}
+#scrapKindButtons .categoryBtn[data-kind="herraje"]{background:#e9f7ff}
+.mermaColorCard{background:#f4f8ff;border:2px solid #b9c9e6;border-radius:16px;padding:14px;margin-top:10px}.mermaColorTitle{font-weight:800;font-size:18px;margin-bottom:6px}.mermaColorCard label{display:block;margin-top:8px;font-weight:700}.checkLine{display:flex!important;align-items:center;gap:8px}.checkLine input{width:20px;height:20px}.mermaHelp{background:#f7f7f7;border-left:4px solid #6b7fa8;padding:10px 12px;border-radius:10px;margin-top:10px;font-size:14px}
+</style>
+</head>
+<body>
+<header><h1>Auditoría de Módulos</h1></header>
+<div class="container">
+
+<div id="loginScreen" class="card hidden">
+<h2>Iniciar sesión</h2>
+<label>Correo</label>
+<input id="email" type="email" value="hfz8717@gmail.com" autocomplete="username">
+<label>Contraseña</label>
+<input id="password" type="password" placeholder="Contraseña" autocomplete="current-password">
+<button id="loginBtn" class="primary">Entrar</button>
+<div id="message"></div>
+</div>
+
+<div id="appScreen" class="hidden">
+<div class="card brandCard">
+  <div class="brandLogo"><span class="cvBlue">C</span><span class="cvRed">V</span></div>
+  <div><div class="brandName">CLOSETS VERA</div><div class="brandSub">Auditoría de Módulos</div></div>
+</div>
+<div class="card">
+<div class="top">
+<div><b>Auditoría Módulos</b><div id="userEmail" class="small"></div></div>
+<button id="logoutBtn" class="logout">Salir</button>
+</div>
+</div>
+
+<div id="moduleScreen">
+<div class="card">
+<h2>Selecciona el módulo</h2>
+<div id="modules" class="module-grid">Cargando módulos...</div>
+</div>
+</div>
+
+<div id="dashboardScreen" class="hidden">
+<div class="card">
+<button id="changeModuleBtn" class="back">← Cambiar módulo</button>
+<h2 id="selectedTitle"></h2>
+<div id="selectedCity" class="small"></div>
+</div>
+
+<div id="dashboardMenu" class="card">
+<h2>¿Qué deseas hacer?</h2>
+<div class="menu-grid">
+<button id="inventoryBtn" class="menu-item">📦 Inventario</button>
+<button id="entriesBtn" class="menu-item">➕ Entradas</button>
+<button id="exitsBtn" class="menu-item">➖ Salidas</button>
+<button id="salesBtn" class="menu-item">🧾 Ventas</button>
+<button id="transferBtn" class="menu-item">🔄 Traspasos</button>
+<button id="auditBtn" class="menu-item">📋 Auditoría física</button>
+<button id="scrapBtn" class="menu-item">📉 Mermas</button>
+<button id="reportBtn" class="menu-item">📊 Reportes</button>
+</div>
+</div>
+</div>
+
+
+<div id="salesScreen" class="hidden">
+<div class="card"><button class="back" onclick="volverDashboard()">← Volver</button><h2>🧾 Ventas</h2><div id="salesModule" class="small"></div></div>
+<div class="card"><h3>Registrar venta</h3><label>Modelo</label><select id="saleModel"><option value="">Cargando modelos...</option></select><label>Cantidad</label><input id="saleQty" type="number" min="1" step="1" value="1">
+<div id="furnitureConfigArea" class="notice" style="margin:10px 0">💡 <b>Configuración de muebles:</b> selecciona qué lleva cada mueble del conjunto. Una Cajonera Emma <b>sustituye</b> la cajonera de ese mueble; no se suma.</div><div id="furnitureConfigBox" style="margin-top:10px"></div><div class="notice" style="margin:10px 0">💡 Elige el color de los frentes y el color de la estructura. Si son iguales, se descontará todo el consumo de melamina de ese mismo color.</div><label>Color de frente</label><select id="saleFrontColor"><option value="">Selecciona color...</option></select><label>Color de fondo / estructura</label><select id="saleStructureColor"><option value="Blanco">Blanco</option></select><label style="display:flex;align-items:center;gap:10px;margin-top:12px"><input id="saleSameColor" type="checkbox" style="width:20px;height:20px"> Frentes y estructura del mismo color</label><label>Correderas</label><select id="saleSlides"><option value="Normales">Normales</option><option value="De extensión">De extensión</option><option value="No lleva">No lleva</option></select><label>Jaladeras</label><select id="saleHandles"><option value="Normales">Normales</option><option value="Planas Max">Planas Max</option><option value="No lleva">No lleva</option></select><label>Nota</label><input id="saleNote" placeholder="Opcional"><button id="saveSaleBtn" class="primary">Guardar venta</button><div id="saleMessage"></div></div>
+<div class="card"><h3>Últimas ventas</h3><div id="salesList">Cargando...</div></div>
+</div>
+
+<div id="transferScreen" class="hidden">
+<div class="card"><button class="back" onclick="volverDashboard()">← Volver</button><h2>🔄 Traspasos</h2><div id="transferModule" class="small"></div></div>
+<div class="card"><h3>Registrar traspaso</h3><div class="notice">El material se <b>descuenta del módulo origen</b> y se <b>agrega automáticamente al módulo destino</b>. Las dos existencias se actualizan juntas.</div><label>Módulo origen</label><div id="transferOrigin" class="small"></div><label>Módulo destino</label><select id="transferDestination"><option value="">Selecciona módulo...</option></select><label>Categoría</label><div id="transferCategoryButtons" class="categoryButtons"></div><label>Material</label><div id="transferMaterialButtons"></div><input id="transferMaterial" type="hidden"><div id="transferAvailable" class="small"></div><label>Cantidad</label><input id="transferQty" type="number" min="0.0001" step="0.0001"><label>Tipo</label><select id="transferKind"><option>Transferencia definitiva</option><option>Prestamo</option><option>Devolución de préstamo</option></select><label>Nota</label><input id="transferNote" placeholder="Opcional"><button id="saveTransferBtn" class="primary">Confirmar traspaso</button><div id="transferMessage"></div></div><div class="card"><h3>📌 Préstamos pendientes</h3><div class="notice">Los préstamos se acumulan por tipo de material, sin importar el color. Si un módulo presta 2 hojas y después recibe 3, queda con un saldo de 1 hoja a su favor.</div><div id="loanBalanceList">Cargando...</div></div><div class="card"><h3>Últimos traspasos</h3><div id="transferList">Cargando...</div></div>
+</div>
+
+<div id="scrapScreen" class="hidden">
+<div class="card"><button class="back" onclick="volverDashboard()">← Volver</button><h2>📉 Mermas</h2><div id="scrapModule" class="small"></div></div>
+<div class="card"><h3>Registrar merma</h3><div class="notice">La merma puede ser una hoja completa, una pieza, una cajonera, un herraje o un espejo. Los herrajes y espejos se descuentan por separado y no generan piezas adicionales. La app convierte las piezas de melamina/MDF a su equivalente de hoja y conserva el color exacto.</div><label>¿Qué se dañó?</label><div id="scrapKindButtons" class="categoryButtons"><button type="button" class="categoryBtn" data-kind="material">Material / hoja</button><button type="button" class="categoryBtn" data-kind="melaminaPieza">Pieza de melamina</button><button type="button" class="categoryBtn" data-kind="maderaPieza">Pieza de MDF</button><button type="button" class="categoryBtn" data-kind="cajonera">Cajonera</button><button type="button" class="categoryBtn" data-kind="cajonPieza">Pieza de cajón</button><button type="button" class="categoryBtn" data-kind="herraje">Herraje</button><button type="button" class="categoryBtn" data-kind="especial">Espejos</button></div><div id="scrapPieceArea"></div><div id="scrapMaterialArea"><label>Categoría</label><div id="scrapCategoryButtons" class="categoryButtons"></div><label>Material</label><div id="scrapMaterialButtons"></div><input id="scrapMaterial" type="hidden"></div><div id="scrapAvailable" class="small"></div><label>Cantidad</label><input id="scrapQty" type="number" min="0.0001" step="0.0001" placeholder="Ej. 1 o 0.5"><label>Motivo</label><div id="scrapReasonButtons" class="categoryButtons"><button type="button" class="categoryBtn" data-reason="Daño">Daño</button><button type="button" class="categoryBtn" data-reason="Error de corte">Error de corte</button><button type="button" class="categoryBtn" data-reason="Material roto">Material roto</button><button type="button" class="categoryBtn" data-reason="Sobrante">Sobrante</button><button type="button" class="categoryBtn" data-reason="Otro">Otro</button></div><input id="scrapReason" placeholder="Motivo (opcional)"><button id="saveScrapBtn" class="primary">📉 Registrar merma</button><div id="scrapMessage"></div></div>
+<div class="card"><h3>📊 Reporte de mermas</h3><div class="notice">Aquí se concentra todo lo desperdiciado. Puedes ver qué material o pieza se desperdició, su color, cantidad, motivo y fecha.</div><div id="scrapReportSummary" class="small">Cargando...</div><div id="scrapReportList">Cargando...</div></div><div class="card"><h3>¿Qué pasa al registrar?</h3><div class="small">1. Se descuenta la cantidad del inventario.</div><div class="small">2. Se guarda el material exacto y su descripción.</div><div class="small">3. Queda registrado el motivo y la fecha en el reporte de mermas.</div></div>
+</div>
+
+<div id="auditScreen" class="hidden">
+<div class="card"><button class="back" onclick="volverDashboard()">← Menú principal</button><h2>📋 Auditoría física</h2><div id="auditModule" class="small"></div></div>
+<div id="physicalAuditApp"></div>
+</div>
+
+<div id="reportScreen" class="hidden">
+<div class="card"><button class="back" onclick="volverDashboard()">← Volver</button><h2>📊 Reportes</h2><div id="reportModule" class="small"></div></div>
+<div class="card"><button id="refreshReportBtn" class="primary">Actualizar reporte</button><div id="reportSummary"></div></div>
+<div class="card"><h3>🧮 Resumen del inventario</h3><div id="reportFormula" class="notice">Cargando...</div></div>
+<div class="card"><h3>📋 Control de auditorías</h3><div id="reportAudits">Cargando...</div></div><div id="reportConversionBox"></div>
+<div class="card"><h3>Existencias</h3><div id="reportInventory"></div></div>
+<div class="card"><h3>Movimientos recientes</h3><div id="reportMovements"></div></div>
+</div>
+
+<div id="movementScreen" class="hidden">
+<div class="card">
+<button id="movementBackBtn" class="back">← Volver</button>
+<h2 id="movementTitle"></h2>
+<div id="movementModule" class="small"></div>
+</div>
+<div class="card">
+<h3 id="movementFormTitle"></h3>
+<div class="small" id="movementHelp"></div>
+<label style="display:block;margin-top:12px;font-weight:700">Categoría</label>
+<div id="movementCategoryButtons" class="categoryButtons" style="margin-top:8px"></div><input type="hidden" id="movementCategory" value="">
+<label style="display:block;margin-top:12px;font-weight:700">Material</label>
+<div id="movementMaterialButtons" class="categoryButtons" style="margin-top:8px"></div><input type="hidden" id="movementMaterial" value="">
+<input id="movementQuantity" type="number" step="0.0001" min="0.0001" placeholder="Cantidad">
+<input id="movementNote" type="text" placeholder="Nota (opcional)">
+<button id="saveMovementBtn" class="primary">Guardar movimiento</button>
+<div id="movementMessage"></div>
+</div>
+<div class="card">
+<h3>Últimos movimientos</h3>
+<div id="movementList">Cargando...</div>
+</div>
+</div>
+
+<div id="inventoryScreen" class="hidden">
+<div class="card">
+<button id="inventoryBackBtn" class="back">← Volver</button>
+<h2>📦 Inventario actual</h2>
+<div id="inventoryModule" class="small"></div>
+<div class="small" style="margin-top:10px">Selecciona qué deseas hacer con el inventario del módulo.</div>
+<div class="menu-grid" style="margin-top:12px">
+<button type="button" class="menu-item" onclick="mostrarSeccionInventario('existencias')">📊 Existencias</button>
+<button type="button" class="menu-item" onclick="mostrarSeccionInventario('inicial')">📦 Inventario inicial</button>
+<button type="button" class="menu-item" onclick="mostrarSeccionInventario('movimientos')">↕️ Movimientos</button>
+</div>
+</div>
+
+<div id="invSeccionExistencias" class="card">
+<h3>📊 Existencias actuales</h3>
+<div id="inventorySummary" class="notice">Cargando existencias...</div>
+<label><b>Categoría</b></label>
+<div id="inventoryCategoryButtons" class="categoryButtons">
+<button type="button" class="categoryBtn selected" data-cat="">Todas</button>
+<button type="button" class="categoryBtn" data-cat="Melamina">Melamina</button>
+<button type="button" class="categoryBtn" data-cat="MDF">MDF</button>
+<button type="button" class="categoryBtn" data-cat="Herrajes">Herrajes</button>
+<button type="button" class="categoryBtn" data-cat="PVC">PVC</button>
+<button type="button" class="categoryBtn" data-cat="Cintilla">Cintilla</button>
+<button type="button" class="categoryBtn" data-cat="Pegamento">Pegamento</button>
+<button type="button" class="categoryBtn" data-cat="Stickers">Stickers</button>
+<button type="button" class="categoryBtn" data-cat="Otro">Otro</button>
+</div>
+<input id="inventorySearch" placeholder="🔎 Buscar material o color...">
+<div id="inventoryList">Cargando inventario...</div>
+</div>
+
+<div id="invSeccionInicial" class="card hidden">
+<h3>📦 Registrar inventario inicial</h3>
+<div class="notice">Aquí se captura con cuánto empieza el módulo. Después, el inventario se calculará automáticamente así: <b>Inicial + Entradas − Salidas = Final</b>.</div>
+<div class="small" style="margin-top:10px">⚠️ Usa esta opción solamente para establecer el inventario de arranque de cada material. Las compras posteriores van en <b>Entradas</b>.</div>
+<label>Categoría</label><select id="categoryFilter"><option value="">Todas</option><option>Melamina</option><option>MDF</option><option>Herrajes</option><option>PVC</option><option>Cintilla</option><option>Pegamento</option><option>Stickers</option><option>Otro</option></select>
+<label>Material</label><select id="materialSelect"><option value="">Selecciona material...</option></select>
+<label>Cantidad inicial</label><input id="stockQuantity" type="number" min="0" step="0.0001" placeholder="Ej. 20">
+<button id="saveStockBtn" class="primary">📦 Guardar inventario inicial</button><div id="stockMessage"></div>
+</div>
+<div id="invSeccionMovimientos" class="card hidden">
+<h3>↕️ Movimientos</h3><div class="small">Las entradas y salidas se registran desde estos botones.</div>
+<button type="button" class="primary" onclick="abrirMovimientos('Entrada')">➕ Registrar entrada</button>
+<button type="button" class="primary" onclick="abrirMovimientos('Salida')" style="margin-top:8px">➖ Registrar salida</button>
+</div>
+
+<div class="card" style="border:2px solid #f59e0b;background:#fffaf0">
+<h3>⚠️ Limpieza del inventario de prueba</h3>
+<div class="small">Esta opción pone <b>en cero únicamente el inventario del módulo actual</b>. No afecta a otros módulos y <b>no genera movimientos de salida</b>.</div>
+<button type="button" id="zeroModuleBtn" class="primary" style="margin-top:10px;background:#b45309">⚠️ Poner este módulo en cero</button>
+<div id="zeroModuleMessage" style="margin-top:8px"></div>
+</div>
+
+<div class="card">
+<h3>ℹ️ ¿Dónde modifico el inventario?</h3>
+<div class="small">➕ <b>Entradas:</b> agrega material recibido.</div>
+<div class="small">➖ <b>Salidas:</b> descuenta material utilizado.</div>
+<div class="small">🧾 <b>Ventas, traspasos, mermas y ajustes:</b> modificarán el inventario automáticamente cuando los habilitemos.</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<script>
+const SUPABASE_URL="https://wncqqdukpihoqlnwegjv.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_2xRUMZ0-auWkiSjc4Ni0yw_otCqA2_8";
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+let selectedModule=null;
+let availableModules=[];
+let inventoryRows=[];
+let materialRows=[];
+let movementType="Entrada";
+
+const $=id=>document.getElementById(id);
+function esc(v){
+  return String(v ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#39;");
+}
+
+async function login(){
+  const email=$("email").value.trim();
+  const password=$("password").value;
+  const msg=$("message");
+  const btn=$("loginBtn");
+  if(!email||!password){msg.innerHTML='<div class="error">Escribe correo y contraseña.</div>';return;}
+  btn.disabled=true;
+  btn.textContent="Entrando...";
+  msg.innerHTML="";
+  try{
+    const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+    if(error) throw error;
+    if(!data.session) throw new Error("Supabase no devolvió una sesión.");
+    await mostrarApp(data.session);
+  }catch(e){
+    msg.innerHTML='<div class="error">'+(e.message||"No se pudo iniciar sesión.")+'</div>';
+  }finally{
+    btn.disabled=false;
+    btn.textContent="Entrar";
+  }
+}
+
+async function mostrarApp(session){
+  $("loginScreen").classList.add("hidden");
+  $("appScreen").classList.remove("hidden");
+  $("userEmail").textContent=(session&&session.user&&session.user.email)?session.user.email:"Acceso directo";
+  await cargarModulos();
+}
+
+async function logout(){
+  await supabaseClient.auth.signOut();
+  location.reload();
+}
+
+async function cargarModulos(){
+  const box=$("modules");
+  box.innerHTML="Cargando módulos...";
+  let data=null;
+  try{
+    const r=await supabaseClient.from("modules").select("*").eq("active",true).order("name");
+    if(r.error) throw r.error;
+    data=r.data||[];
+    if(!data.length) throw new Error("No hay módulos activos configurados en Supabase.");
+  }catch(e){
+    box.innerHTML='<div class="error">No se pudieron cargar los módulos reales desde Supabase. No se muestran módulos de respaldo para evitar registrar información en un módulo inexistente.<br>'+esc(e.message||e)+'</div>';
+    return;
+  }
+  availableModules=data;
+  box.innerHTML="";
+  data.forEach(m=>{
+    const b=document.createElement("button");
+    b.className="module "+(m.name||"").toLowerCase();
+    const key=(m.name||"").toLowerCase();
+    let cityCode=m.region==="Monterrey"?"MTY":m.region==="Guadalajara"?"GDL":"SALT";
+    let visualClass=m.region==="Monterrey"?"mty":m.region==="Guadalajara"?"gdl":"salt";
+    let initial=(m.name||"").charAt(0).toUpperCase();
+    b.innerHTML='<div class="moduleVisual '+visualClass+'"><div class="initial">'+initial+'</div><div class="city">'+cityCode+'</div></div><b>'+esc(m.name)+'</b><span>'+esc(m.region||"")+'</span>';
+    b.onclick=()=>seleccionarModulo(m);
+    box.appendChild(b);
+  });
+}
+
+function seleccionarModulo(m){
+  selectedModule=m;
+  $("moduleScreen").classList.add("hidden");
+  $("dashboardScreen").classList.remove("hidden");
+  $("inventoryScreen").classList.add("hidden");
+  $("selectedTitle").textContent=m.name;
+  $("selectedCity").textContent=m.region||"";
+}
+
+function volverModulos(){
+  selectedModule=null;
+  $("dashboardScreen").classList.add("hidden");
+  $("inventoryScreen").classList.add("hidden");
+  $("movementScreen").classList.add("hidden");
+  $("moduleScreen").classList.remove("hidden");
+}
+
+async function cargarCatalogoMateriales(){
+  const mr=await supabaseClient.from("materials")
+    .select("id,name,category,unit,color,active")
+    .eq("active",true)
+    .order("category")
+    .order("name");
+  if(mr.error) throw mr.error;
+  materialRows=mr.data||[];
+}
+
+async function abrirMovimientos(tipo){
+  if(!selectedModule){alert("Primero selecciona un módulo.");return;}
+  try{
+    await cargarCatalogoMateriales();
+  }catch(e){
+    alert("No se pudo cargar el catálogo de materiales: "+(e.message||e));
+    return;
+  }
+  movementType=tipo;
+  // Cargar el catálogo antes de construir el menú de categorías.
+  if(!materialRows.length){
+    try{
+      const {data,error}=await supabaseClient.from("materials")
+        .select("id,name,category,unit,color,active")
+        .eq("active",true)
+        .order("category")
+        .order("name");
+      if(error) throw error;
+      materialRows=data||[];
+    }catch(e){
+      alert("No se pudo cargar el catálogo de materiales: "+e.message);
+      return;
+    }
+  }
+  $("dashboardScreen").classList.add("hidden");
+  $("inventoryScreen").classList.add("hidden");
+  $("movementScreen").classList.remove("hidden");
+  const esEntrada=tipo==="Entrada";
+  $("movementTitle").textContent=esEntrada?"➕ Entradas":"➖ Salidas";
+  $("movementFormTitle").textContent=esEntrada?"Registrar entrada":"Registrar salida";
+  $("movementHelp").textContent=esEntrada?"El material recibido se sumará al inventario del módulo.":"El material utilizado se descontará del inventario del módulo.";
+  $("movementModule").textContent="Módulo: "+selectedModule.name;
+  $("movementQuantity").value=""; $("movementNote").value=""; $("movementMessage").innerHTML="";
+  llenarCategoriasMovimiento();
+  cargarMovimientos();
+}
+
+function llenarCategoriasMovimiento(){
+  const box=$("movementCategoryButtons");
+  const cats=["Melamina","MDF","Herrajes","PVC","Cintilla","Pegamento","Stickers","Otro"];
+  $("movementCategory").value="";
+  box.innerHTML=cats.map(c=>`<button type="button" class="categoryBtn" data-cat="${esc(c)}">${esc(c)}</button>`).join("");
+  box.querySelectorAll(".categoryBtn").forEach(b=>b.onclick=()=>{
+    const cat=b.dataset.cat;
+    $("movementCategory").value=cat;
+    box.querySelectorAll(".categoryBtn").forEach(x=>x.classList.remove("selected"));
+    b.classList.add("selected");
+    llenarMaterialesMovimiento();
+  });
+  $("movementMaterialButtons").innerHTML='<div class="small">Selecciona una categoría para ver los materiales.</div>';
+  $("movementMaterial").value="";
+}
+
+async function llenarMaterialesMovimiento(){
+  const cat=$("movementCategory").value;
+  const box=$("movementMaterialButtons");
+  if(!cat){box.innerHTML='<div class="small">Selecciona una categoría para ver los materiales.</div>';return;}
+  box.innerHTML='<div class="small">Cargando materiales...</div>';
+  let arr=materialRows.filter(m=>m.category===cat && m.active!==false);
+  if(cat==='Pegamento'){
+    const especiales=materialRows.filter(m=>m.active!==false && ['Pegamento amarillo','Pegamento granulado'].includes(m.name));
+    arr=[...new Map([...arr,...especiales].map(m=>[m.id,m])).values()];
+    arr=arr.filter(m=>m.name!=='Pegamento amarillo por kilo');
+  }
+  if(cat==='Stickers'){
+    // Los stickers se manejan por color. Usamos únicamente los registros
+    // individuales del catálogo (no el registro genérico 'Stickers').
+    const colores=['Blanco','Cenizo','Beige','Durango','Gris','Lino','Bco. Mármol','Neg. Mármol','Monarca','Negro','Nogal','Polar','Rioja','Roble','Roble Santana','Choco'];
+    const reales=arr.filter(m=>String(m.color||'').trim());
+    arr=reales.length ? reales : colores.map((color,i)=>({id:'sticker-color-'+i,name:'Stickers',category:'Stickers',unit:'piezas',color,active:true}));
+  }
+  if(!arr.length){box.innerHTML='<div class="notice">No hay materiales registrados en esta categoría.</div>';return;}
+  box.innerHTML=arr.map(m=>{const etiqueta=(m.name==='Pegamento amarillo por kilo'?'Pegamento amarillo':m.name==='Pegamento granulado'?'Pegamento granulado':materialLabel(m)); return `<button type="button" class="materialBtn" data-id="${m.id}"><b>${esc(etiqueta)}</b><span>${esc(displayUnit(m))}${movementType==='Salida'?' · Disponible':''}</span></button>`;}).join("");
+  box.querySelectorAll(".materialBtn").forEach(b=>b.onclick=()=>{
+    $("movementMaterial").value=b.dataset.id;
+    box.querySelectorAll(".materialBtn").forEach(x=>x.classList.remove("selected"));
+    b.classList.add("selected");
+  });
+}
+
+async function cargarMovimientos(){
+  const box=$("movementList"); box.innerHTML="Cargando...";
+  try{
+    const {data,error}=await supabaseClient.from("movements").select("id,type,quantity,note,created_at,material_id,materials(name,category,unit,color)").eq("module_id",selectedModule.id).in("type",["Entrada","Salida","Merma"]).order("created_at",{ascending:false}).limit(20);
+    if(error) throw error;
+    if(!data||!data.length){box.innerHTML='<div class="notice">No hay movimientos registrados todavía.</div>';return;}
+    box.innerHTML=data.map(x=>{
+      const m=x.materials||{}; const name=m.category==='Melamina'?(m.color||m.name):((m.name||'').toLowerCase()==='clavos 30'?'Clavos 35':m.name);
+      const entrada=x.type==='Entrada'; const esMerma=String(x.note||'').trim().toLowerCase().startsWith('merma');
+      return '<div class="item"><b class="'+(entrada?'movementIn':'movementOut')+'">'+(entrada?'➕ Entrada':(esMerma?'📉 Merma':'➖ Salida'))+'</b><div><b>'+name+'</b></div><div class="small">'+x.quantity+' '+displayUnit({name:m.name,unit:m.unit})+(x.note?' · '+x.note:'')+'</div><div class="small">'+new Date(x.created_at).toLocaleString('es-MX')+'</div></div>';
+    }).join("");
+  }catch(e){box.innerHTML='<div class="error">Error cargando movimientos:<br>'+e.message+'</div>';}
+}
+
+async function guardarMovimiento(){
+  const materialId=$("movementMaterial").value; const qty=Number($("movementQuantity").value); const note=$("movementNote").value.trim(); const msg=$("movementMessage"); const btn=$("saveMovementBtn");
+  msg.innerHTML="";
+  if(!materialId){msg.innerHTML='<div class="error">Selecciona un material.</div>';return;}
+  if(!qty||qty<=0){msg.innerHTML='<div class="error">Captura una cantidad válida.</div>';return;}
+  btn.disabled=true; btn.textContent="Guardando...";
+  try{
+    if(!selectedModule || !selectedModule.id) throw new Error("No se pudo identificar el módulo seleccionado.");
+    const {error}=await supabaseClient.rpc('registrar_movimiento',{p_module_id:selectedModule.id,p_material_id:materialId,p_type:movementType,p_quantity:qty,p_note:note||null});
+    if(error) throw error;
+    msg.innerHTML='<div class="success">'+(movementType==='Entrada'?'Entrada registrada y sumada al inventario.':'Salida registrada y descontada del inventario.')+'</div>';
+    await cargarInventario();
+    $("movementQuantity").value=""; $("movementNote").value="";
+    await cargarMovimientos();
+  }catch(e){msg.innerHTML='<div class="error">No se pudo guardar:<br>'+e.message+'</div>';}
+  finally{btn.disabled=false;btn.textContent="Guardar movimiento";}
+}
+
+function mostrarSeccionInventario(sec){["existencias","inicial","movimientos"].forEach(x=>$("invSeccion"+x.charAt(0).toUpperCase()+x.slice(1))?.classList.add("hidden"));const id="invSeccion"+sec.charAt(0).toUpperCase()+sec.slice(1);$(id)?.classList.remove("hidden");if(sec==='inicial')llenarMateriales();}
+
+function abrirInventario(){
+  if(!selectedModule){alert("Primero selecciona un módulo.");return;}
+  $("dashboardScreen").classList.add("hidden");
+  $("inventoryScreen").classList.remove("hidden");
+  $("inventoryModule").textContent="Módulo: "+selectedModule.name;
+  $("zeroModuleMessage").innerHTML="";
+  cargarInventario();
+}
+
+function volverDashboard(){
+  ["inventoryScreen","movementScreen","salesScreen","transferScreen","scrapScreen","auditScreen","reportScreen"].forEach(id=>$(id)?.classList.add("hidden"));
+  $("dashboardScreen").classList.remove("hidden");
+}
+
+async function ponerModuloEnCero(){
+  if(!selectedModule||!selectedModule.id){
+    alert('Primero selecciona un módulo.');
+    return;
+  }
+  const msg=$("zeroModuleMessage");
+  const btn=$("zeroModuleBtn");
+  const nombre=selectedModule.name||'este módulo';
+  if(!confirm('⚠️ Vas a poner en CERO todo el inventario de '+nombre+'.\n\nEsto solo afectará a este módulo.\nNo se crearán movimientos de salida y los demás módulos no serán modificados.\n\n¿Deseas continuar?')) return;
+  const pin=prompt('Escribe 1212 para confirmar la limpieza del inventario de prueba de '+nombre+':');
+  if(pin!=='1212'){
+    alert('PIN incorrecto. No se modificó ningún inventario.');
+    return;
+  }
+  btn.disabled=true;
+  btn.textContent='Limpiando...';
+  msg.innerHTML='';
+  try{
+    const {data,error}=await supabaseClient.rpc('limpiar_inventario_pruebas_modulo',{p_module_id:selectedModule.id});
+    if(error) throw error;
+    const n=Number(data?.materials_reset||0);
+    msg.innerHTML='<div class="success">✅ Inventario de <b>'+esc(nombre)+'</b> puesto en cero. Se actualizaron '+n+' materiales. No se generaron salidas.</div>';
+    await cargarInventario();
+  }catch(e){
+    msg.innerHTML='<div class="error">No se pudo poner el módulo en cero:<br>'+esc(e.message||e)+'</div>';
+  }finally{
+    btn.disabled=false;
+    btn.textContent='⚠️ Poner este módulo en cero';
+  }
+}
+
+async function cargarInventario(){
+  const box=$("inventoryList");
+  box.innerHTML="Cargando inventario...";
+  try{
+    const {data,error}=await supabaseClient
+      .from("inventory_view")
+      .select("*")
+      .eq("module_id",selectedModule.id)
+      .order("category")
+      .order("material_name");
+    if(error) throw error;
+    inventoryRows=data||[];
+
+    // Cargar todos los movimientos del módulo para mostrar Inicial + Entradas - Salidas.
+    // Antes solo se cargaba inventory_view, por eso Entradas y Salidas aparecían en cero.
+    const mv=await supabaseClient.from("movements")
+      .select("id,type,quantity,note,created_at,material_id")
+      .eq("module_id",selectedModule.id)
+      .in("type",["Entrada","Salida","Merma"]);
+    if(mv.error) throw mv.error;
+    window.inventoryMovementRows=mv.data||[];
+
+    const mr=await supabaseClient.from("materials")
+      .select("id,name,category,unit,color,active")
+      .eq("active",true)
+      .order("category")
+      .order("name");
+    if(mr.error) throw mr.error;
+    materialRows=mr.data||[];
+    configurarCategoriasInventario();
+    filtrarInventario();
+  }catch(e){
+    box.innerHTML='<div class="error">Error cargando inventario:<br>'+e.message+'</div>';
+  }
+}
+
+function llenarMateriales(){
+  const sel=$("materialSelect");
+  const cat=$("categoryFilter").value;
+  const arr=materialRows.filter(m=>!cat||m.category===cat);
+  sel.innerHTML='<option value="">Selecciona material...</option>'+
+    arr.map(m=>'<option value="'+m.id+'">'+materialLabel(m)+(m.category==='Melamina'?'':' · '+(m.color||''))+' — '+displayUnit(m)+'</option>').join("");
+  renderQuickInventory();
+}
+
+async function guardarInventario(){
+  const materialId=$("materialSelect").value;
+  const qty=Number($("stockQuantity").value);
+  const msg=$("stockMessage");
+  const btn=$("saveStockBtn");
+  msg.innerHTML="";
+  if(!materialId){msg.innerHTML='<div class="error">Selecciona un material.</div>';return;}
+  if(!Number.isFinite(qty)||qty<0){msg.innerHTML='<div class="error">Captura una cantidad inicial válida.</div>';return;}
+  btn.disabled=true; btn.textContent='Guardando...';
+  try{
+    if(!selectedModule||!selectedModule.id) throw new Error('No se pudo identificar el módulo seleccionado.');
+    // El inventario inicial se registra como una entrada especial para que quede guardado
+    // en el historial y el resumen pueda calcular Inicial + Entradas - Salidas.
+    const {data:mv,error:qe}=await supabaseClient.from('movements')
+      .select('id')
+      .eq('module_id',selectedModule.id)
+      .eq('material_id',materialId)
+      .eq('type','Entrada')
+      .ilike('note','Inventario inicial%')
+      .limit(1);
+    if(qe) throw qe;
+    if(mv&&mv.length){throw new Error('Este material ya tiene inventario inicial. Para aumentarlo usa Entradas.');}
+    const {error}=await supabaseClient.rpc('registrar_movimiento',{
+      p_module_id:selectedModule.id,
+      p_material_id:materialId,
+      p_type:'Entrada',
+      p_quantity:qty,
+      p_note:'Inventario inicial'
+    });
+    if(error) throw error;
+    msg.innerHTML='<div class="success">✅ Inventario inicial guardado. Ahora las entradas y salidas se reflejarán en el cálculo del stock final.</div>';
+    $("stockQuantity").value="";
+    await cargarInventario();
+  }catch(e){
+    msg.innerHTML='<div class="error">No se pudo guardar:<br>'+esc(e.message||e)+'</div>';
+  }finally{
+    btn.disabled=false; btn.textContent='📦 Guardar inventario inicial';
+  }
+}
+
+function materialLabel(m){
+  // Para melamina mostramos únicamente el color para que sea rápido y claro.
+  if(m.category==='Melamina') return (m.color||'').trim() || m.name;
+  const n=(m.name||'').trim();
+  if(m.category==='Stickers') return (m.color||'').trim() || n;
+  // En el taller se maneja Clavos 35; el material antiguo de Supabase puede venir como Clavos 30.
+  if(n.toLowerCase()==='clavos 30') return 'Clavos 35';
+  return n;
+}
+
+// Unidades especiales del taller.
+function displayUnit(m){
+  const n=(m.name||'').trim().toLowerCase();
+  if(n==='clavos 25' || n==='clavos 35' || n==='clavos 30') return 'caja';
+  if(n==='taquetes') return 'bolsa (100 pzas)';
+  return m.unit||'';
+}
+
+// Mostrar cantidades de forma amigable: elimina ceros innecesarios.
+// Ej.: 30.0000 → 30 · 8.6914 → 8.69 · 0.5000 → 0.5
+function fmtQty(value){
+  const n=Number(value||0);
+  if(!Number.isFinite(n)) return '0';
+  return n.toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:2});
+}
+
+function renderQuickInventory(){
+  const cat=$("quickCategory").value;
+  const q=$("quickSearch").value.toLowerCase().trim();
+  const rows=materialRows.filter(m=>
+    (!cat||m.category===cat)&&
+    (!q||materialLabel(m).toLowerCase().includes(q)||(m.name||'').toLowerCase().includes(q)||(m.color||'').toLowerCase().includes(q))
+  );
+  const box=$("quickInventoryList");
+  if(!rows.length){box.innerHTML='<div class="notice">No hay materiales en esta categoría.</div>';return;}
+  const currentById=new Map(inventoryRows.map(r=>[r.material_id,Number(r.quantity||0)]));
+  box.innerHTML=rows.map(m=>{
+    const current=currentById.has(m.id)?currentById.get(m.id):null;
+    const unit=displayUnit(m);
+    const name=materialLabel(m);
+    const meta=m.category==='Melamina'?unit:(m.color ? m.color+' · '+unit : unit);
+    const currentText=current!==null?'<div class="quickCurrent">Actual: '+fmtQty(current)+' '+unit+'</div>':'';
+    return '<div class="item" style="display:flex;align-items:center;justify-content:space-between;gap:10px">'+
+      '<div style="flex:1;min-width:0"><div class="quickName">'+name+'</div><div class="quickMeta">'+meta+'</div>'+currentText+'</div>'+
+      '<input class="quickQty" data-id="'+m.id+'" type="number" min="0" step="0.0001" placeholder="Cantidad"></div>';
+  }).join('');
+}
+
+async function guardarInventarioRapido(){
+  const inputs=[...document.querySelectorAll('.quickQty')].filter(x=>x.value!=='');
+  const msg=$("quickMessage");
+  msg.innerHTML='';
+  if(!inputs.length){msg.innerHTML='<div class="error">Captura al menos una cantidad.</div>';return;}
+  const btn=$("saveQuickBtn");
+  btn.disabled=true; btn.textContent='Guardando...';
+  try{
+    const rows=inputs.map(x=>({module_id:selectedModule.id,material_id:x.dataset.id,quantity:Number(x.value),updated_at:new Date().toISOString()}));
+    const {error}=await supabaseClient.from('inventory').upsert(rows,{onConflict:'module_id,material_id'});
+    if(error) throw error;
+    msg.innerHTML='<div class="success">Inventario guardado correctamente. Se actualizaron '+rows.length+' materiales.</div>';
+    await cargarInventario();
+    renderQuickInventory();
+  }catch(e){
+    msg.innerHTML='<div class="error">No se pudo guardar:<br>'+e.message+'</div>';
+  }finally{
+    btn.disabled=false; btn.textContent='💾 Guardar inventario capturado';
+  }
+}
+
+function filtrarInventario(){
+  const cat=$('inventoryCategoryButtons')?.dataset?.selected || '';
+  const q=$('inventorySearch').value.toLowerCase().trim();
+  const moves=window.inventoryMovementRows||[],byId=new Map();
+  moves.forEach(x=>{if(!x.material_id)return;if(!byId.has(x.material_id))byId.set(x.material_id,{initial:0,entries:0,exits:0,mermas:0,hasInitial:false,reasons:[]});const g=byId.get(x.material_id),qty=Number(x.quantity||0),noteRaw=String(x.note||''),note=noteRaw.toLowerCase();if(x.type==='Entrada'&&note.startsWith('inventario inicial')){g.initial+=qty;g.hasInitial=true}else if(x.type==='Entrada')g.entries+=qty;else if(x.type==='Merma'||note.startsWith('merma')){g.mermas+=qty;const rr=noteRaw.replace(/^merma\s*[·:-]?\s*/i,'').trim();if(rr)g.reasons.push(rr)}else if(x.type==='Salida')g.exits+=qty;});
+  const rows=inventoryRows.filter(r=>{if(cat&&r.category!==cat)return false;const name=(r.category==='Melamina'?(r.color||r.material_name):r.material_name)||'';return !q||name.toLowerCase().includes(q)||String(r.color||'').toLowerCase().includes(q);});
+  let ti=0,te=0,tx=0,tm=0,tf=0;
+  // Ordenar y separar por categoría para que el inventario no aparezca revuelto.
+  const grupos={};
+  rows.forEach(r=>{(grupos[r.category] ||= []).push(r);});
+  const categorias=Object.keys(grupos).sort((a,b)=>a.localeCompare(b,'es'));
+  let html='';
+  categorias.forEach(catName=>{
+    html+='<div class="inventoryCategoryTitle">'+esc(catName)+'</div>';
+    html+=grupos[catName].map(r=>{
+      const g=byId.get(r.material_id)||{initial:0,entries:0,exits:0,mermas:0,hasInitial:false,reasons:[]};
+      const finalQty=Number(r.quantity||0);
+      const initial=g.hasInitial?g.initial:Math.max(0,finalQty-g.entries+g.exits+g.mermas);
+      ti+=initial;te+=g.entries;tx+=g.exits;tm+=g.mermas;tf+=finalQty;
+      const name=r.category==='Melamina'?(r.color||r.material_name):((r.material_name||'').toLowerCase()==='clavos 30'?'Clavos 35':r.material_name);
+      const unit=displayUnit({name:r.material_name,unit:r.unit});
+      return '<div class="item"><b>'+esc(name)+'</b><div class="small">Unidad: '+esc(unit)+'</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px"><div><div class="small">Inicial</div><b>'+fmtQty(initial)+'</b></div><div><div class="small">Entradas</div><b>+'+fmtQty(g.entries)+'</b></div><div><div class="small">Salidas</div><b>−'+fmtQty(g.exits)+'</b></div><div><div class="small">Mermas</div><b>−'+fmtQty(g.mermas)+'</b></div><div><div class="small">Final</div><b>'+fmtQty(finalQty)+'</b></div></div><div class="small" style="margin-top:6px">Inicial + entradas − salidas − mermas = <b>'+fmtQty(finalQty)+'</b> '+esc(unit)+'</div></div>';
+    }).join('');
+  });
+  $('inventoryList').innerHTML=html||'<div class="notice">No hay existencias para esta categoría o búsqueda.</div>';
+  $('inventorySummary').innerHTML='<b>Resumen:</b> Inicial '+fmtQty(ti)+' · Entradas +'+fmtQty(te)+' · Salidas −'+fmtQty(tx)+' · Mermas −'+fmtQty(tm)+' · <b>Final '+fmtQty(tf)+'</b>';
+}
+
+function configurarCategoriasInventario(){
+  const box=$('inventoryCategoryButtons');
+  if(!box) return;
+  box.dataset.selected='';
+  box.querySelectorAll('.categoryBtn').forEach(b=>{
+    b.classList.toggle('selected',b.dataset.cat==='');
+    b.onclick=()=>{
+      box.dataset.selected=b.dataset.cat||'';
+      box.querySelectorAll('.categoryBtn').forEach(x=>x.classList.toggle('selected',x===b));
+      filtrarInventario();
+    };
+  });
+}
+
+
+function mostrarPantalla(id){
+  ["dashboardScreen","inventoryScreen","movementScreen","salesScreen","transferScreen","scrapScreen","auditScreen","reportScreen"].forEach(x=>$(x)?.classList.add("hidden"));
+  $(id).classList.remove("hidden");
+}
+const COLORES_MELAMINA=["Blanco","Cenizo","Beige","Durango","Gris","Lino","Bco. Mármol","Neg. Mármol","Monarca","Negro","Nogal","Polar","Rioja","Roble","Roble Santana","Choco"];
+function llenarColoresVenta(){const f=$("saleFrontColor"),st=$("saleStructureColor");const opts='<option value="">Selecciona color...</option>'+COLORES_MELAMINA.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');f.innerHTML=opts;st.innerHTML='<option value="">Selecciona color...</option>'+COLORES_MELAMINA.map(c=>'<option value="'+esc(c)+'"'+(c==='Blanco'?' selected':'')+'>'+esc(c)+'</option>').join('');}
+function actualizarMismoColorVenta(){const same=$("saleSameColor").checked;if(same){const c=$("saleFrontColor").value||$("saleStructureColor").value||'Blanco';$("saleFrontColor").value=c;$("saleStructureColor").value=c;}$("saleStructureColor").disabled=same;}
+function syncColorVenta(source){if($("saleSameColor").checked){$("saleStructureColor").value=$(source).value;$("saleFrontColor").value=$(source).value;}}
+async function cargarModelosVenta(){
+  const s=$("saleModel"); s.innerHTML='<option value="">Conectando con modelos...</option>';
+  try{
+    const {data,error}=await supabaseClient.from("models").select("id,name,family,recipe").eq("active",true).order("family").order("name");
+    if(error)throw error;
+    if(!data||!data.length){s.innerHTML='<option value="">No hay modelos activos</option>';throw new Error('No se encontraron modelos activos en Supabase.');}
+    window.__saleModels=data;
+    const wanted=[['Lateral','lateral'],['Central','central'],['Doble','doble'],['Doble Especial','doble especial'],['King','king'],['Triple','triple']];
+    const opts=[];
+    for(const [label,key] of wanted){
+      let m=null;
+      if(key==='doble especial')m=data.find(x=>String(x.name||'').toLowerCase()==='doble especial');
+      else m=data.find(x=>String(x.family||'').toLowerCase().includes(key));
+      if(m)opts.push('<option value="'+m.id+'" data-family="'+esc(key)+'" data-base-name="'+esc(label)+'">'+esc(label)+'</option>');
+    }
+    s.innerHTML='<option value="">Selecciona modelo...</option>'+opts.join('');
+    s.onchange=actualizarConfiguracionMuebles;
+    actualizarConfiguracionMuebles();
+  }catch(e){s.innerHTML='<option value="">No se pudieron cargar los modelos</option>';throw new Error('Modelos: '+(e.message||e));}
+}
+function familiaVentaSeleccionada(){
+  const s=$("saleModel"),o=s?.selectedOptions?.[0];
+  return String(o?.dataset?.family||'').toLowerCase();
+}
+function cantidadMueblesFamilia(f){
+  f=String(f||'').toLowerCase();
+  if(f.includes('triple'))return 3;
+  if(f.includes('doble')||f.includes('king'))return 2;
+  return 1;
+}
+const TIPOS_MUEBLE_VENTA=['Sencillo','3 Cajones','5 Cajones','6 Cajones','8 Cajones','10 Cajones','Espejo','Cajonera Emma'];
+function renderOpcionesTipoMueble(selected){
+  return TIPOS_MUEBLE_VENTA.map(t=>'<option value="'+esc(t)+'"'+(t===selected?' selected':'')+'>'+esc(t)+'</option>').join('');
+}
+function actualizarConfiguracionMuebles(){
+  const box=$("furnitureConfigBox");if(!box)return;
+  const f=familiaVentaSeleccionada();
+  if(!f){box.innerHTML='<span class="small">Primero selecciona el modelo.</span>';return;}
+  const n=cantidadMueblesFamilia(f),defaults=Array.from({length:n},()=> 'Sencillo');
+  // Para una nueva selección, cada mueble empieza en Sencillo.
+  box.innerHTML=Array.from({length:n},(_,i)=>'<div class="item" style="margin-bottom:8px"><label><b>Mueble '+(i+1)+'</b></label><select class="saleFurnitureType" data-index="'+i+'">'+renderOpcionesTipoMueble(defaults[i])+'</select></div>').join('');
+  box.querySelectorAll('.saleFurnitureType').forEach(x=>x.addEventListener('change',actualizarResumenConfiguracion));
+  actualizarResumenConfiguracion();
+}
+function actualizarResumenConfiguracion(){
+  const box=$("furnitureConfigBox");if(!box)return;
+  const sels=[...box.querySelectorAll('.saleFurnitureType')];
+  if(!sels.length)return;
+  const vals=sels.map(x=>x.value),emma=vals.filter(x=>x==='Cajonera Emma').length;
+  let note='<div class="small" style="margin-top:6px"><b>Configuración:</b> '+vals.map((v,i)=>'Mueble '+(i+1)+': '+esc(v)).join(' · ')+'</div>';
+  if(emma)note+='<div class="small">Emma sustituye únicamente el tipo de cajonera del mueble seleccionado; no se suma a otra cajonera.</div>';
+  const old=box.querySelector('.saleConfigSummary');if(old)old.remove();const d=document.createElement('div');d.className='saleConfigSummary';d.innerHTML=note;box.appendChild(d);
+}
+function obtenerTiposMueblesVenta(){return [...document.querySelectorAll('.saleFurnitureType')].map(x=>x.value);}
+function recetaTipoMueble(tipo,f){
+  const r={drawers:0,jaladeras:0,slides:0,bisagras:0,tubes:0,bridas:0,mirrors:0,pieces:{walls:0,shelves:0,maleteros:0,short:0,long:0,drawerBottom:0,cajBottom:0,zoclo10:0,zoclo16:0,zoclo18:0,fronts:0,frameV:0,frameH:0}};
+  const p=r.pieces; f=String(f||'').toLowerCase();
+  // Cada mueble aporta su propia estructura. Esto permite que Emma reemplace
+  // realmente a una cajonera normal sin conservar el despiece de la anterior.
+  p.walls=f.includes('lateral')?(tipo==='Cajonera Emma'?2:3):2;
+  if(tipo==='Sencillo'){p.shelves=5;p.zoclo10=2;}
+  else if(tipo==='3 Cajones'){r.drawers=3;p.shelves=5;p.short=6;p.long=6;p.drawerBottom=3;p.cajBottom=1;p.fronts=3;p.zoclo10=2;}
+  else if(tipo==='5 Cajones'){r.drawers=5;p.shelves=4;p.short=10;p.long=10;p.drawerBottom=5;p.cajBottom=1;p.fronts=5;p.zoclo10=2;}
+  else if(tipo==='6 Cajones'){r.drawers=6;p.shelves=5;p.short=12;p.long=12;p.drawerBottom=6;p.cajBottom=2;p.fronts=6;p.zoclo10=2;}
+  else if(tipo==='8 Cajones'){r.drawers=8;p.shelves=4;p.short=16;p.long=16;p.drawerBottom=8;p.cajBottom=2;p.fronts=8;p.zoclo10=2;}
+  else if(tipo==='10 Cajones'){r.drawers=10;p.shelves=3;p.short=20;p.long=20;p.drawerBottom=10;p.cajBottom=2;p.fronts=10;p.zoclo10=2;}
+  else if(tipo==='Espejo'){p.shelves=5;p.zoclo16=1;p.zoclo18=1;p.frameV=2;p.frameH=2;p.cajBottom=1;r.mirrors=1;}
+  else if(tipo==='Cajonera Emma'){r.drawers=4;p.shelves=4;p.walls=2;p.short=8;p.long=8;p.drawerBottom=4;p.cajBottom=1;p.zoclo10=5;p.fronts=4;r.emma=true;}
+  return r;
+}
+function recetaVentaConfigurada(f,tipos){
+  const r={drawers:0,jaladeras:0,slides:0,bisagras:0,tubes:0,bridas:0,mirrors:0,pieces:{walls:0,shelves:0,maleteros:0,short:0,long:0,drawerBottom:0,cajBottom:0,zoclo10:0,zoclo16:0,zoclo18:0,fronts:0,frameV:0,frameH:0}};
+  const p=r.pieces; f=String(f||'').toLowerCase();
+  // Cada mueble aporta su estructura y su tipo de cajonera. Solo se agregan
+  // elementos propios del conjunto (maleteros y, en King, una pared adicional).
+  if(f.includes('central')||f.includes('doble')||f.includes('triple')||f.includes('king'))p.maleteros=f.includes('triple')?2:1;
+  if(f.includes('king'))p.walls+=1; // King tiene una pared adicional compartida.
+  for(const tipo of tipos){const x=recetaTipoMueble(tipo,f),xp=x.pieces||{};r.drawers+=x.drawers||0;r.mirrors+=x.mirrors||0;for(const k of Object.keys(p))p[k]+=Number(xp[k]||0);}
+  if(f.includes('doble especial')){r.tubes=4;r.bridas=4;} else if(f.includes('lateral')){r.tubes=2;r.bridas=2;} else if(f.includes('central')){r.tubes=3;r.bridas=3;} else if(f.includes('doble')){r.tubes=2;r.bridas=2;} else if(f.includes('king')){r.tubes=5;r.bridas=5;} else if(f.includes('triple')){r.tubes=4;r.bridas=4;}
+  return r;
+}
+async function abrirVentas(){if(!selectedModule)return alert("Primero selecciona un módulo.");mostrarPantalla("salesScreen");$("salesModule").textContent="Módulo: "+selectedModule.name;$("saleMessage").innerHTML="";llenarColoresVenta();$("saleSameColor").checked=false;$("saleStructureColor").disabled=false;try{await cargarModelosVenta();await cargarVentas();}catch(e){$("saleMessage").innerHTML='<div class="error">'+esc(e.message||e)+'</div>';}}
+async function cargarVentas(){
+  const b=$("salesList");
+  b.innerHTML='Cargando últimas ventas...';
+  try{
+    const {data,error}=await supabaseClient.from("sales").select("sale_date,model_name,quantity,finish_mode,finish_color,extra,created_at").eq("module_id",selectedModule.id).order("created_at",{ascending:false}).limit(20);
+    if(error) throw error;
+    b.innerHTML=(data||[]).length?(data.map(x=>{const ex=x.extra||{};return '<div class="item"><b>'+esc(x.model_name||"Venta")+'</b><div>'+x.quantity+' pieza(s) · Frente: '+esc(ex.front_color||x.finish_color||'—')+' · Estructura: '+esc(ex.structure_color||'—')+' · Correderas: '+esc(ex.slides||'—')+' · Jaladeras: '+esc(ex.handles||'—')+'</div><div class="small">'+new Date(x.created_at).toLocaleString('es-MX')+'</div></div>';}).join('')):'<div class="notice">No hay ventas registradas.</div>';
+  }catch(e){b.innerHTML='<div class="error">No se pudieron cargar las últimas ventas: '+esc(e.message||e)+'</div>';}
+}
+function obtenerCantidadPiezas(recipe,key){return Number(recipe?.pieces?.[key]||0);}
+function calcularConsumoMelamina(recipe){
+  const p=recipe?.pieces||{};
+  const yy={walls:1/3,shelves:1/14,maleteros:1/3,short:1/49,long:1/35,fronts:1/24,zoclo10:1/44,zoclo16:1/28,zoclo18:1/24,frameV:1/11,frameH:1/18};
+  const structure=(Number(p.walls||0)*yy.walls)+(Number(p.shelves||0)*yy.shelves)+(Number(p.maleteros||0)*yy.maleteros)+(Number(p.short||0)*yy.short)+(Number(p.long||0)*yy.long);
+  const color=(Number(p.fronts||0)*yy.fronts)+(Number(p.zoclo10||0)*yy.zoclo10)+(Number(p.zoclo16||0)*yy.zoclo16)+(Number(p.zoclo18||0)*yy.zoclo18)+(Number(p.frameV||0)*yy.frameV)+(Number(p.frameH||0)*yy.frameH);
+  return {structure,color,total:structure+color};
+}
+async function buscarMaterialMelamina(color){
+  const {data,error}=await supabaseClient.from('materials').select('id,name,color,unit,category').eq('category','Melamina').eq('active',true).eq('color',color).limit(1);
+  if(error)throw error;if(data&&data[0])return data[0];
+  const {data:d,error:e}=await supabaseClient.from('materials').select('id,name,color,unit,category').eq('category','Melamina').eq('active',true).ilike('name',color).limit(1);
+  if(e)throw e;return d&&d[0]||null;
+}
+async function buscarMaterialNombre(name){
+  const {data,error}=await supabaseClient.from('materials').select('id,name,color,unit,category').eq('active',true).ilike('name',name).limit(1);
+  if(error)throw error;return data&&data[0]||null;
+}
+async function buscarMaterialPorNombres(names){
+  for(const name of names){const m=await buscarMaterialNombre(name);if(m)return m;}return null;
+}
+async function descontarMaterial(id,qty,note){
+  if(!id||qty<=0)return;
+  // Usamos la función segura de Supabase para registrar la Salida.
+  // Así se actualizan INVENTARIO y MOVIMIENTOS en una sola operación,
+  // sin depender de permisos directos sobre la tabla movements.
+  const {error}=await supabaseClient.rpc('registrar_movimiento',{
+    p_module_id:selectedModule.id,
+    p_material_id:id,
+    p_type:'Salida',
+    p_quantity:qty,
+    p_note:note||null
+  });
+  if(error)throw error;
+}
+async function verificarExistenciaVenta(materialId,qty,label){
+  if(!materialId||qty<=0)return;
+  const {data,error}=await supabaseClient.from('inventory').select('quantity').eq('module_id',selectedModule.id).eq('material_id',materialId).maybeSingle();
+  if(error)throw error;const disponible=Number(data?.quantity||0);
+  if(disponible+1e-9<qty)throw new Error('Existencia insuficiente en '+label+'. Disponible: '+disponible+', solicitado: '+qty);
+}
+async function guardarVenta(){
+  const modelId=$("saleModel").value,qty=Number($("saleQty").value),front=$("saleFrontColor").value,structure=$("saleStructureColor").value,slides=$("saleSlides").value,handles=$("saleHandles").value,note=$("saleNote").value.trim(),msg=$("saleMessage");
+  const family=familiaVentaSeleccionada(),tipos=obtenerTiposMueblesVenta();
+  if(!modelId||qty<=0){msg.innerHTML='<div class="error">Selecciona modelo y cantidad válida.</div>';return;}
+  if(!tipos.length){msg.innerHTML='<div class="error">Selecciona la configuración de los muebles.</div>';return;}
+  if(!front||!structure){msg.innerHTML='<div class="error">Selecciona el color de frente y el color de fondo / estructura.</div>';return;}
+  if($("saleSameColor").checked&&front!==structure){msg.innerHTML='<div class="error">Los colores deben ser iguales cuando marcas “mismo color”.</div>';return;}
+  const emmaQty=tipos.filter(x=>x==='Cajonera Emma').length;
+  const btn=$("saveSaleBtn");btn.disabled=true;btn.textContent='Revisando existencias...';msg.innerHTML='';
+  try{
+    const base= (window.__saleModels||[]).find(x=>x.id===modelId); if(!base)throw new Error('No encontré el modelo seleccionado.');
+    const recipe=recetaVentaConfigurada(family,tipos),p=recipe.pieces||{},consumo=calcularConsumoMelamina(recipe);
+    const totalStructure=consumo.structure*qty,totalColor=consumo.color*qty,same=front===structure;
+    const matStructure=await buscarMaterialMelamina(structure),matFront=same?matStructure:await buscarMaterialMelamina(front);
+    if(!matStructure)throw new Error('No encontré en materiales la melamina de estructura: '+structure);
+    if(!matFront)throw new Error('No encontré en materiales la melamina de frente: '+front);
+    const drawers=Number(recipe.drawers||0)*qty,emmaDrawers=4*emmaQty*qty,mirrors=Number(recipe.mirrors||0)*qty;
+    const nonEmmaDrawers=Math.max(0,drawers-emmaDrawers);
+    const handlesTotal=(handles==='No lleva'?0:nonEmmaDrawers);const mirrorHandles=mirrors;
+    const hingesTotal=mirrors*1.5;
+    const tubesTotal=Number(recipe.tubes||0)*qty,bridasTotal=Number(recipe.bridas||0)*qty;
+    const drawerBottomPieces=Number(p.drawerBottom||0)*qty,cajBottomPieces=Number(p.cajBottom||0)*qty;
+    const req=[],addReq=(mat,q,label)=>{if(mat&&q>0)req.push([mat.id,q,label]);};
+    if(totalStructure>0)addReq(matStructure,totalStructure,'melamina de estructura '+structure);
+    if(totalColor>0)addReq(matFront,totalColor,'melamina de frentes/exteriores '+front);
+    if(drawerBottomPieces>0){const md3=await buscarMaterialPorNombres(['MDF natural 3 mm','MDF 3 mm','MDF natural 3mm','MDF 3mm']);if(!md3)throw new Error('No encontré el material "MDF natural 3 mm" para los fondos de cajón.');addReq(md3,drawerBottomPieces/14,'MDF 3 mm — '+drawerBottomPieces+' fondo(s) de cajón');}
+    if(cajBottomPieces>0){const md3Caj=await buscarMaterialPorNombres(['MDF natural 3 mm','MDF 3 mm','MDF natural 3mm','MDF 3mm']);if(!md3Caj)throw new Error('No encontré el material "MDF natural 3 mm" para los fondos de cajonera.');addReq(md3Caj,cajBottomPieces/4,'MDF 3 mm — '+cajBottomPieces+' fondo(s) de cajonera');}
+    if(drawers>0&&slides!=='No lleva'){const sm=await buscarMaterialPorNombres(slides==='De extensión'?['Juego de correderas extensión','Juego de corredera extensión']:['Juego de corredera','Juego de correderas']);if(!sm)throw new Error('No encontré el material de corredera: '+slides);addReq(sm,drawers,slides+' — '+drawers+' correderas');}
+    if(emmaQty>0&&slides==='No lleva')throw new Error('La Cajonera Emma siempre lleva 4 correderas. Selecciona "Normales" o "De extensión".');
+    if(handlesTotal>0){const hm=await buscarMaterialPorNombres(handles==='Planas Max'?['Jaladeras planas Max','Jaladeras Planas Max']:['Jaladeras']);if(!hm)throw new Error('No encontré el material de jaladeras: '+handles);addReq(hm,handlesTotal,handles+' — '+handlesTotal+' pieza(s)');}if(mirrorHandles>0){const mh=await buscarMaterialPorNombres(['Jaladeras']);if(!mh)throw new Error('No encontré el material de jaladeras para el espejo.');addReq(mh,mirrorHandles,'Jaladeras de espejo — '+mirrorHandles+' pieza(s)');}
+    if(tubesTotal>0){const tm=await buscarMaterialPorNombres(['Tubo 1.5 mts','Tubo 1.5 mt']);if(!tm)throw new Error('No encontré "Tubo 1.5 mts" en Herrajes.');addReq(tm,tubesTotal,'Tubo 1.5 mts');}
+    if(bridasTotal>0){const bm=await buscarMaterialPorNombres(['Juegos de bridas','Juego de bridas']);if(!bm)throw new Error('No encontré "Juegos de bridas" en Herrajes.');addReq(bm,bridasTotal,'Juegos de bridas');}
+    if(mirrors>0){const mm=await buscarMaterialPorNombres(['Espejos de clóset','Espejos de closet']);if(!mm)throw new Error('No encontré el material de espejo.');addReq(mm,mirrors,'Espejos de clóset');}
+    if(hingesTotal>0){const hm2=await buscarMaterialPorNombres(['Bisagras']);if(!hm2)throw new Error('No encontré el material de bisagras.');addReq(hm2,hingesTotal,'Bisagras');}
+    const grouped=new Map(),labels=new Map();req.forEach(x=>{grouped.set(x[0],(grouped.get(x[0])||0)+x[1]);labels.set(x[0],labels.get(x[0])?labels.get(x[0])+' + '+x[2]:x[2]);});
+    for(const [id,q] of grouped)await verificarExistenciaVenta(id,q,labels.get(id)||'material');
+    btn.textContent='Descontando materiales...';
+    for(const [id,q] of grouped)await descontarMaterial(id,q,'Venta '+(base.name||family)+' — '+labels.get(id));
+    const user=(await supabaseClient.auth.getUser()).data.user;
+    const modelName=(family==='doble especial'?'Doble Especial':(family.charAt(0).toUpperCase()+family.slice(1)))+' — '+tipos.join(' + ');
+    const extra={note:note||null,front_color:front,structure_color:structure,same_color:same,slides,handles,configuracion_muebles:tipos,emma_cajoneras:emmaQty,consumo_estructura_hojas:totalStructure,consumo_color_hojas:totalColor,despiece:{drawers,emma_drawers:emmaDrawers,drawer_bottom_pieces:drawerBottomPieces,drawer_bottom_sheets:drawerBottomPieces/14,cajonera_backings:cajBottomPieces,cajonera_backing_sheets:cajBottomPieces/4},herrajes:{drawers:nonEmmaDrawers,emma_drawers:emmaDrawers,handles:handlesTotal+mirrorHandles,mirror_handles:mirrorHandles,slides:(slides==='No lleva'?0:drawers),tubes:tubesTotal,bridas:bridasTotal,mirrors,bisagras:hingesTotal}};
+    const {error}=await supabaseClient.from('sales').insert({module_id:selectedModule.id,model_id:modelId,model_name:modelName,quantity:qty,finish_mode:'Por colores',finish_color:front,extra,created_by:user?.id||null});if(error)throw error;
+    msg.innerHTML='<div class="success">✅ Venta registrada. Se descontó únicamente la configuración seleccionada de cada mueble. Emma sustituye la cajonera de su mueble y no se suma.</div>';$('saleNote').value='';await cargarVentas();await cargarInventario();
+  }catch(e){msg.innerHTML='<div class="error">No se pudo guardar: '+esc(e.message||e)+'</div>';}finally{btn.disabled=false;btn.textContent='Guardar venta';}
+}
+const MERMA_PIEZAS={
+  melaminaPieza:[['Pared','walls',1/3],['Entrepaño','shelves',1/14],['Maletero','maleteros',1/3],['Pieza corta de cajón','short',1/49],['Pieza larga de cajón','long',1/35],['Frente de cajón','fronts',1/24],['Zóclo 10 × 52','zoclo10',1/44],['Zóclo 16 × 52','zoclo16',1/28],['Zóclo 18 × 52','zoclo18',1/24],['Marco vertical de espejo','frameV',1/11],['Marco horizontal de espejo','frameH',1/18]],
+  maderaPieza:[['Fondo de cajón (49 × 33)','drawerBottom',1/14],['Fondo de cajonera (55 × 122)','cajBottom',1/4]],
+  cajonera:[['Cajonera de 3 cajones','caj3',1],['Cajonera de 5 cajones','caj5',1],['Cajonera con espejo','cajEspejo',1],['Cajonera Emma','cajEmma',1]],
+  cajonPieza:[['Pieza corta de cajón','short',1],['Pieza larga de cajón','long',1],['Fondo de cajón','drawerBottom',1],['Frente de cajón','fronts',1]],
+  especial:[['Espejo','mirror',1]]
+};
+const MERMA_HERRAJES=[['Jaladeras','pieza'],['Rieles','pieza'],['Sistemas','pieza'],['Bastidores','pieza'],['Tubos','pieza'],['Bisagras','juego'],['Bridas','juego'],['Correderas','juego'],['Correderas de extensión','juego'],['Jaladeras planas','pieza']];
+function normalizarTexto(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();}
+async function buscarMaterialHerraje(nombre){
+ const key=normalizarTexto(nombre);
+ const aliases={
+  'correderas de extension':['correderas de extension','correderas extension'],
+  'jaladeras planas':['jaladeras planas max','jaladeras planas'],
+  'jaladeras':['jaladeras'],
+  'tubos':['tubo 1.5 mts','tubo 1.5 mt','tubos'],
+  'bisagras':['bisagras'], 'bridas':['bridas'], 'rieles':['rieles'], 'sistemas':['sistemas'], 'bastidores':['bastidores'], 'correderas':['correderas']
+ };
+ const terms=aliases[key]||[key];
+ const arr=(materialRows||[]).filter(m=>m.active!==false && normalizarTexto(m.category)==='herrajes');
+ for(const t of terms){const nt=normalizarTexto(t);const exact=arr.find(m=>normalizarTexto(m.name)===nt);if(exact)return exact;const starts=arr.find(m=>normalizarTexto(m.name).startsWith(nt));if(starts)return starts;const contains=arr.find(m=>normalizarTexto(m.name).includes(nt));if(contains)return contains;}
+ return null;
+}
+
+function despieceMermaCajonera(tipo){
+ const p={walls:0,shelves:0,zoclo10:0,zoclo16:0,zoclo18:0,cajBottom:0};
+ if(tipo==='caj3'){p.walls=2;p.shelves=5;p.zoclo10=2;p.cajBottom=1;}
+ if(tipo==='caj5'){p.walls=2;p.shelves=4;p.zoclo10=2;p.cajBottom=1;}
+ if(tipo==='cajEspejo'){p.walls=2;p.shelves=5;p.zoclo16=1;p.zoclo18=1;p.cajBottom=1;}
+ if(tipo==='cajEmma'){p.walls=2;p.shelves=4;p.zoclo10=5;p.cajBottom=1;}
+ return p;
+}
+let scrapKind='material',scrapPiece=null;
+async function renderMaterialesEspejoMerma(){const box=$('scrapMaterialArea');box.style.display='block';const cats=await supabaseClient.from('materials').select('*').eq('active',true);const arr=(cats.data||[]).filter(m=>/espejo/i.test((m.name||'')+' '+(m.category||'')));box.innerHTML='<label>Espejo</label><div id="scrapMirrorButtons" class="categoryButtons">'+(arr.length?arr.map(m=>'<button type="button" class="categoryBtn" data-id="'+m.id+'">'+esc(materialLabel(m))+'</button>').join(''):'<div class="notice">No encontré materiales de espejo.</div>')+'</div>';box.querySelectorAll('button').forEach(b=>b.onclick=()=>{box.querySelectorAll('button').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');$('scrapMaterial').value=b.dataset.id;mostrarDisponibleMerma(b.dataset.id);});}
+function prepararTiposMerma(){
+  const box=$('scrapKindButtons');
+  box.querySelectorAll('.categoryBtn').forEach(b=>b.onclick=()=>{
+    scrapKind=b.dataset.kind;scrapPiece=null;
+    box.querySelectorAll('.categoryBtn').forEach(x=>x.classList.toggle('selected',x===b));
+    renderPiezasMerma();
+    $('scrapMaterialArea').style.display=scrapKind==='material'?'block':'none';
+    if(scrapKind!=='material'){$('scrapAvailable').innerHTML='';$('scrapMaterial').value='';} if(scrapKind==='especial'){renderMaterialesEspejoMerma();}
+  });
+  const first=box.querySelector('.categoryBtn');if(first)first.click();
+}
+function renderPiezasMerma(){
+  const area=$('scrapPieceArea');
+  if(scrapKind==='material'){area.innerHTML='';return;}
+  if(scrapKind==='herraje'){
+    area.innerHTML='<label>Tipo de herraje</label><div id="scrapPieceButtons" class="categoryButtons">'+MERMA_HERRAJES.map((x,i)=>'<button type="button" class="categoryBtn" data-i="'+i+'"><b>'+esc(x[0])+'</b><span class="small">'+esc(x[1])+'</span></button>').join('')+'</div><div id="scrapPieceColorArea"></div>';
+    area.querySelectorAll('.categoryBtn').forEach(b=>b.onclick=()=>{area.querySelectorAll('.categoryBtn').forEach(x=>x.classList.toggle('selected',x===b));scrapPiece=MERMA_HERRAJES[Number(b.dataset.i)];renderColorMerma();});
+    return;
+  }
+  const arr=MERMA_PIEZAS[scrapKind]||[];
+  area.innerHTML='<label>Tipo de pieza</label><div id="scrapPieceButtons" class="categoryButtons">'+arr.map((x,i)=>'<button type="button" class="categoryBtn" data-i="'+i+'">'+esc(x[0])+'</button>').join('')+'</div><div id="scrapPieceColorArea"></div>';
+  area.querySelectorAll('.categoryBtn').forEach(b=>b.onclick=()=>{
+    area.querySelectorAll('.categoryBtn').forEach(x=>x.classList.toggle('selected',x===b));
+    scrapPiece=arr[Number(b.dataset.i)];renderColorMerma();
+  });
+}
+function renderColorMerma(){
+  const area=$('scrapPieceColorArea');if(!area||!scrapPiece)return;
+  if(scrapKind==='herraje'){area.innerHTML='<div class="mermaHelp">Se descontará solo el herraje dañado. No se descuenta ninguna pieza adicional del mueble.</div>';return;}
+  const needsColor=scrapKind==='melaminaPieza'||scrapKind==='cajonera'||(scrapKind==='cajonPieza'&&scrapPiece[1]!=='drawerBottom');
+  if(scrapKind==='cajonera'){
+    area.innerHTML=
+      '<div class="mermaColorCard">'+
+      '<div class="mermaColorTitle">🎨 Colores de la cajonera</div>'+
+      '<div class="mermaHelp">La cajonera puede tener la estructura de un color y los zóclos del color de frente. No asumimos que toda la cajonera sea del mismo color.</div>'+
+      '<label>Color base / estructura</label>'+
+      '<div id="scrapBaseColorButtons" class="categoryButtons">'+COLORES_MELAMINA.map(c=>'<button type="button" class="categoryBtn" data-color="'+esc(c)+'">'+esc(c)+'</button>').join('')+'</div>'+
+      '<input id="scrapBaseColor" type="hidden">'+
+      '<label style="margin-top:12px">Color de frente / zóclos</label>'+
+      '<div id="scrapFrontColorButtons" class="categoryButtons">'+COLORES_MELAMINA.map(c=>'<button type="button" class="categoryBtn" data-color="'+esc(c)+'">'+esc(c)+'</button>').join('')+'</div>'+
+      '<input id="scrapFrontColor" type="hidden">'+
+      '<label class="checkLine" style="margin-top:10px"><input id="scrapAllOneColor" type="checkbox"> <b>Todo de un solo color</b></label>'+
+      '<div id="scrapSameColorHelp" class="notice">Si activas esta opción, los zóclos se descontarán del color base.</div>'+
+      '</div>'+
+      '<div class="mermaHelp">La cajonera es solo el mueble. No incluye cajones, frentes físicos, espejos ni herrajes.</div>';
+    const base=area.querySelectorAll('#scrapBaseColorButtons .categoryBtn');
+    const front=area.querySelectorAll('#scrapFrontColorButtons .categoryBtn');
+    base.forEach(b=>b.onclick=()=>{base.forEach(x=>x.classList.toggle('selected',x===b));$('scrapBaseColor').value=b.dataset.color;actualizarDisponiblePiezaMerma();});
+    front.forEach(b=>b.onclick=()=>{front.forEach(x=>x.classList.toggle('selected',x===b));$('scrapFrontColor').value=b.dataset.color;actualizarDisponiblePiezaMerma();});
+    $('scrapAllOneColor').onchange=()=>{
+      const same=$('scrapAllOneColor').checked;
+      $('scrapFrontColorButtons').style.display=same?'none':'grid';
+      if(same){$('scrapFrontColor').value=$('scrapBaseColor').value;front.forEach(x=>x.classList.toggle('selected',x.dataset.color===$('scrapBaseColor').value));}
+      $('scrapSameColorHelp').textContent=same?'Todo el consumo de melamina de la cajonera se descontará del color base.':'Los zóclos se descontarán del color de frente / zóclos.';
+      actualizarDisponiblePiezaMerma();
+    };
+    return;
+  }
+  if(needsColor){
+    area.innerHTML='<label>Color de la melamina</label><div id="scrapColorButtons" class="categoryButtons">'+COLORES_MELAMINA.map(c=>'<button type="button" class="categoryBtn" data-color="'+esc(c)+'">'+esc(c)+'</button>').join('')+'</div><input id="scrapPieceColor" type="hidden">';
+    area.querySelectorAll('#scrapColorButtons .categoryBtn').forEach(b=>b.onclick=()=>{area.querySelectorAll('#scrapColorButtons .categoryBtn').forEach(x=>x.classList.toggle('selected',x===b));$('scrapPieceColor').value=b.dataset.color;actualizarDisponiblePiezaMerma();});
+  }else{area.innerHTML='<div class="notice">MDF natural 3 mm. No lleva color.</div>';$('scrapPieceColorArea').dataset.ready='1';actualizarDisponiblePiezaMerma();}
+}
+async function actualizarDisponiblePiezaMerma(){
+  if(!scrapPiece)return;
+  const color=$('scrapPieceColor')?.value||'';
+  if(scrapKind==='cajonera'){const base=$('scrapBaseColor')?.value||'',front=$('scrapFrontColor')?.value||'';const all=$('scrapAllOneColor')?.checked;if(!base||(!all&&!front)){ $('scrapAvailable').innerHTML='<div class="notice">Selecciona el color base y el color de frente / zóclos.</div>';return; }} else if((scrapKind==='melaminaPieza'||(scrapKind==='cajonPieza'&&scrapPiece[1]!=='drawerBottom'))&&!color){$('scrapAvailable').innerHTML='<div class="notice">Selecciona el color para consultar existencias.</div>';return;}
+  try{
+    if(scrapKind==='cajonera'){
+      const p=despieceMermaCajonera(scrapPiece[1]);
+      const melSheet=p.walls/3+p.shelves/14+p.zoclo10/44+p.zoclo16/28+p.zoclo18/24;
+      const mdSheet=p.cajBottom/4;
+      const mel=await buscarMaterialMelamina(color);
+      const mdf=await buscarMaterialPorNombres(['MDF natural 3 mm','MDF 3 mm','MDF natural 3mm','MDF 3mm']);
+      if(!mel||!mdf){$('scrapAvailable').innerHTML='<div class="notice">No se pudo consultar automáticamente la existencia de la melamina/MDF. La merma todavía puede registrarse si los materiales están disponibles.</div>';return;}
+      const [a,b]=await Promise.all([supabaseClient.from('inventory').select('quantity').eq('module_id',selectedModule.id).eq('material_id',mel.id).maybeSingle(),supabaseClient.from('inventory').select('quantity').eq('module_id',selectedModule.id).eq('material_id',mdf.id).maybeSingle()]);
+      if(a.error||b.error)throw new Error('No se pudo consultar la existencia.');
+      $('scrapAvailable').innerHTML='<div class="mermaStockGrid"><div class="notice"><b>Melamina</b><br>Se descontará: <b>'+fmtQty(melSheet*Number($('scrapQty').value||1))+' hojas</b><br>Disponible: '+fmtQty(a.data?.quantity||0)+' hojas</div><div class="notice"><b>MDF 3 mm</b><br>Se descontará: <b>'+fmtQty(mdSheet*Number($('scrapQty').value||1))+' hojas</b><br>Disponible: '+fmtQty(b.data?.quantity||0)+' hojas</div></div>';return;
+    }
+    let mat=null;
+    if(scrapKind==='melaminaPieza'||scrapKind==='cajonPieza'&&scrapPiece[1]!=='drawerBottom')mat=await buscarMaterialMelamina(color);
+    else mat=await buscarMaterialPorNombres(['MDF natural 3 mm','MDF 3 mm','MDF natural 3mm','MDF 3mm']);
+    if(!mat){$('scrapAvailable').innerHTML='<div class="error">No encontré el material correspondiente.</div>';return;}
+    const {data,error}=await supabaseClient.from('inventory').select('quantity').eq('module_id',selectedModule.id).eq('material_id',mat.id).maybeSingle();
+    if(error)throw error;$('scrapAvailable').innerHTML='<div class="notice">Disponible de '+esc(materialLabel(mat))+': <b>'+fmtQty(data?.quantity||0)+' '+esc(displayUnit(mat))+'</b></div>';
+  }catch(e){$('scrapAvailable').innerHTML='<div class="notice">No se pudo consultar la existencia en este momento.</div>';}
+}
+async function mostrarDisponibleMerma(id){const box=$('scrapAvailable');if(!id){box.innerHTML='';return;}try{const {data,error}=await supabaseClient.from('inventory').select('quantity').eq('module_id',selectedModule.id).eq('material_id',id).maybeSingle();if(error)throw error;const q=Number(data?.quantity||0);box.innerHTML='<div class="notice">Disponible para merma: <b>'+fmtQty(q)+' '+esc(displayUnit((materialRows||[]).find(m=>m.id===id)||{}))+'</b></div>';}catch(e){box.innerHTML='<div class="error">No se pudo consultar la existencia.</div>';}}
+function cargarMaterialesGenerico(prefix,cat){const box=$(prefix+'MaterialButtons');let arr=materialRows.filter(m=>m.category===cat&&m.active!==false);box.innerHTML=arr.length?arr.map(m=>'<button type="button" class="materialBtn" data-id="'+m.id+'"><b>'+esc(materialLabel(m))+'</b><span>'+esc(displayUnit(m))+'</span></button>').join(''):'<div class="notice">No hay materiales.</div>';box.querySelectorAll('button').forEach(b=>b.onclick=async()=>{box.querySelectorAll('button').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');$('scrapMaterial').value=b.dataset.id;if(prefix==='transfer')await actualizarDisponibleTraspaso();if(prefix==='scrap')await mostrarDisponibleMerma(b.dataset.id);});}
+async function cargarReporteMermas(){
+  const sum=$('scrapReportSummary'),list=$('scrapReportList'); if(!sum||!list)return;
+  sum.textContent='Cargando...'; list.innerHTML='';
+  try{
+    const {data:rawData,error}=await supabaseClient.from('movements').select('id,quantity,note,created_at,material_id,materials(name,category,unit,color)').eq('module_id',selectedModule.id).eq('type','Salida').order('created_at',{ascending:false}).limit(200);
+    if(error)throw error;
+    const data=(rawData||[]).filter(x=>String(x.note||'').trim().toLowerCase().startsWith('merma'));
+    if(!data||!data.length){sum.innerHTML='<b>Total de mermas:</b> 0';list.innerHTML='<div class="notice">Todavía no hay mermas registradas.</div>';return;}
+    const total=data.reduce((a,x)=>a+Number(x.quantity||0),0);
+    const motivos={}; const MOTIVOS=['Daño','Error de corte','Material roto','Sobrante','Otro']; data.forEach(x=>{const parts=String(x.note||'').split(' · ').map(v=>v.trim()); const found=MOTIVOS.find(m=>parts.some(v=>v.toLowerCase()===m.toLowerCase())); const motivo=found||'Sin motivo'; motivos[motivo]=(motivos[motivo]||0)+Number(x.quantity||0);});
+    sum.innerHTML='<b>Total de mermas:</b> '+fmtQty(total)+' hojas · <b>Registros:</b> '+data.length+'<br><span class="small">Por motivo: '+Object.entries(motivos).map(([k,v])=>esc(k)+' '+fmtQty(v)).join(' · ')+'</span>';
+    list.innerHTML=data.map(x=>{const m=x.materials||{};const parts=String(x.note||'').split(' · ').map(v=>v.trim()).filter(Boolean);const desc=parts.length>1?parts.slice(1).filter(v=>!/^\d+(?:[.,]\d+)?\s+hojas?$/i.test(v)).filter(v=>!MOTIVOS.some(mm=>mm.toLowerCase()===v.toLowerCase())).join(' · '):materialLabel(m);const motivo=MOTIVOS.find(v=>parts.some(p=>p.toLowerCase()===v.toLowerCase()))||'Sin motivo';return '<div class="item"><b>📉 '+esc(desc||materialLabel(m))+'</b><div><b>'+fmtQty(Number(x.quantity||0))+' '+esc(displayUnit(m))+'</b></div><div class="small">Motivo: '+esc(motivo)+'</div><div class="small">'+new Date(x.created_at).toLocaleString('es-MX')+'</div></div>';}).join('');
+  }catch(e){sum.innerHTML='';list.innerHTML='<div class="error">No se pudo cargar el reporte de mermas: '+esc(e.message||e)+'</div>';}
+}
+
+async function abrirMermas(){mostrarPantalla('scrapScreen');$('scrapModule').textContent='Módulo: '+selectedModule.name;await cargarCatalogoMateriales();scrapKind='material';scrapPiece=null;prepararTiposMerma();await prepararCategoriasGenerico('scrap');await cargarReporteMermas();}
+async function guardarMerma(){
+ $('scrapAvailable').innerHTML='';
+ const q=Number($('scrapQty').value),reason=$('scrapReason').value.trim(),msg=$('scrapMessage'),btn=$('saveScrapBtn');msg.innerHTML='';
+ if(q<=0){msg.innerHTML='<div class="error">Escribe una cantidad mayor que cero.</div>';return;}
+ try{
+  const movements=[];
+  if(scrapKind==='material'){
+   const id=$('scrapMaterial').value;if(!id)throw new Error('Selecciona el material que se dañó.');
+   const mat=materialRows.find(m=>m.id===id);movements.push({id,qty:q,mat,label:materialLabel(mat)||'material'});
+  }else if(scrapKind==='cajonera'){
+   if(!scrapPiece)throw new Error('Selecciona la cajonera.');
+   const base=$('scrapBaseColor')?.value||'',front=$('scrapFrontColor')?.value||'',all=$('scrapAllOneColor')?.checked;
+   if(!base)throw new Error('Selecciona el color base / estructura.');
+   if(!all&&!front)throw new Error('Selecciona el color de frente / zóclos.');
+   const zocloColor=all?base:front;
+   const p=despieceMermaCajonera(scrapPiece[1]);
+   const baseMel=await buscarMaterialMelamina(base),zocloMel=await buscarMaterialMelamina(zocloColor),mdf=await buscarMaterialPorNombres(['MDF natural 3 mm','MDF 3 mm','MDF natural 3mm','MDF 3mm']);
+   if(!baseMel||!zocloMel||!mdf)throw new Error('No se encontró en el catálogo la melamina/MDF necesario para registrar esta merma.');
+   const baseQty=q*(p.walls/3+p.shelves/14);
+   const zocloQty=q*(p.zoclo10/44+p.zoclo16/28+p.zoclo18/24);
+   if(baseMel.id===zocloMel.id){
+     movements.push({id:baseMel.id,qty:baseQty+zocloQty,mat:baseMel,label:scrapPiece[0]+' · Melamina · '+materialLabel(baseMel)});
+   }else{
+     movements.push({id:baseMel.id,qty:baseQty,mat:baseMel,label:scrapPiece[0]+' · Base/estructura · '+materialLabel(baseMel)});
+     movements.push({id:zocloMel.id,qty:zocloQty,mat:zocloMel,label:scrapPiece[0]+' · Zóclos · '+materialLabel(zocloMel)});
+   }
+   movements.push({id:mdf.id,qty:q*(p.cajBottom/4),mat:mdf,label:scrapPiece[0]+' · MDF · '+materialLabel(mdf)});
+  }else if(scrapKind==='herraje'){
+   if(!scrapPiece)throw new Error('Selecciona el herraje que se dañó.');
+   const mat=await buscarMaterialHerraje(scrapPiece[0]);
+   if(!mat)throw new Error('No encontré en el catálogo el herraje: '+scrapPiece[0]+'.');
+   movements.push({id:mat.id,qty:q,mat,label:'Herraje · '+scrapPiece[0]+' · '+q+' '+scrapPiece[1]});
+  }else if(scrapKind==='especial'){
+   const id=$('scrapMaterial').value;if(!id)throw new Error('Selecciona el espejo que se dañó.');const mat=materialRows.find(m=>m.id===id);movements.push({id,qty:q,mat,label:'Espejo · '+materialLabel(mat)});
+  }else{
+   if(!scrapPiece)throw new Error('Selecciona el tipo de pieza.');const color=$('scrapPieceColor')?.value||'';const isMel=scrapKind==='melaminaPieza'||(scrapKind==='cajonPieza'&&scrapPiece[1]!=='drawerBottom');if(isMel&&!color)throw new Error('Selecciona el color de la pieza.');
+   const mat=isMel?await buscarMaterialMelamina(color):await buscarMaterialPorNombres(['MDF natural 3 mm','MDF 3 mm','MDF natural 3mm','MDF 3mm']);if(!mat)throw new Error('No encontré el material correspondiente.');
+   const factor=scrapKind==='cajonPieza'?({short:1/49,long:1/35,drawerBottom:1/14,fronts:1/24}[scrapPiece[1]]||1):Number(scrapPiece[2]);
+   movements.push({id:mat.id,qty:q*factor,mat,label:scrapPiece[0]+' · '+materialLabel(mat)});
+  }
+  for(const m of movements){const {data:inv,error:ie}=await supabaseClient.from('inventory').select('quantity').eq('module_id',selectedModule.id).eq('material_id',m.id).maybeSingle();if(ie)throw ie;if(m.qty>Number(inv?.quantity||0)+1e-9)throw new Error('No hay suficiente material de '+materialLabel(m.mat)+'. Disponible: '+fmtQty(inv?.quantity||0)+' hojas.');}
+  btn.disabled=true;btn.textContent='Registrando...';
+  for(const m of movements){const note='Merma · '+m.label+(reason?' · '+reason:'');const {error:r}=await supabaseClient.rpc('registrar_movimiento',{p_module_id:selectedModule.id,p_material_id:m.id,p_type:'Salida',p_quantity:m.qty,p_note:note});if(r)throw r;try{const {data:uid}=await supabaseClient.auth.getUser();await supabaseClient.from('scraps').insert({module_id:selectedModule.id,material_id:m.id,quantity:m.qty,reason:reason||'Sin motivo',created_by:uid?.user?.id});}catch(_){} }
+  msg.innerHTML='<div class="success">✅ Merma registrada correctamente. Se descontó el material correspondiente.</div>';$('scrapAvailable').innerHTML='';$('scrapQty').value='';$('scrapReason').value='';await cargarInventario();await cargarReporteMermas();
+ }catch(e){msg.innerHTML='<div class="error">No se pudo registrar: '+esc(e.message||e)+'</div>';}finally{btn.disabled=false;btn.textContent='📉 Registrar merma';}
+}
+document.querySelectorAll('#scrapReasonButtons .categoryBtn').forEach(b=>b.onclick=()=>{document.querySelectorAll('#scrapReasonButtons .categoryBtn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');$('scrapReason').value=b.dataset.reason;});
+
+function prepararCategoriasGenerico(prefix){
+  const box=$(prefix+"CategoryButtons");
+  const matBox=$(prefix+"MaterialButtons");
+  if(!box||!matBox)return;
+  const cats=[...new Set((materialRows||[]).filter(m=>m.active!==false).map(m=>m.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  box.innerHTML=cats.length?cats.map(c=>'<button type="button" class="categoryBtn" data-cat="'+esc(c)+'">'+esc(c)+'</button>').join(''):'<div class="notice">No hay categorías.</div>';
+  box.dataset.selected='';
+  const render=(cat)=>{
+    box.querySelectorAll('.categoryBtn').forEach(x=>x.classList.toggle('selected',x.dataset.cat===cat));
+    box.dataset.selected=cat;
+    cargarMaterialesGenerico(prefix,cat);
+  };
+  box.querySelectorAll('.categoryBtn').forEach(b=>b.onclick=()=>render(b.dataset.cat));
+  if(cats.length) render(cats[0]);
+  else matBox.innerHTML='<div class="notice">No hay materiales.</div>';
+}
+
+function familiaPrestamo(m){
+  if(!m)return 'Material';
+  const cat=(m.category||'').trim();
+  const name=(m.name||'').trim();
+  if(cat==='Melamina') return 'Melamina';
+  const colores=['blanco','cenizo','beige','durango','gris','lino','bco. mármol','neg. mármol','monarca','negro','nogal','polar','rioja','roble','roble santana','choco','wengue','chardonnay','ébano indi','ebano indi'];
+  let base=name.toLowerCase();
+  colores.forEach(c=>{base=base.replace(new RegExp('\\b'+c.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\$&')+'\\b','gi'),' ');});
+  base=base.replace(/\\s+/g,' ').trim();
+  return cat+' · '+(base||name||'Material');
+}
+
+function esPrestamo(tipo){return (tipo||'').toLowerCase()==='prestamo';}
+function esDevolucion(tipo){return (tipo||'').toLowerCase().includes('devolución')||(tipo||'').toLowerCase().includes('devolucion');}
+
+async function obtenerDatosPrestamos(){
+  const {data,error}=await supabaseClient.from('transfers')
+    .select('id,origin_module_id,destination_module_id,movement_kind,status,note,created_at')
+    .or('origin_module_id.eq.'+selectedModule.id+',destination_module_id.eq.'+selectedModule.id)
+    .order('created_at',{ascending:true});
+  if(error)throw error;
+  const rows=data||[];
+  if(!rows.length)return [];
+  const transferIds=rows.map(x=>x.id);
+  const {data:items,error:ie}=await supabaseClient.from('transfer_items')
+    .select('id,transfer_id,material_id,quantity')
+    .in('transfer_id',transferIds);
+  if(ie)throw ie;
+  const ids=[...new Set((items||[]).map(x=>x.material_id).filter(Boolean))];
+  let mats=[];
+  if(ids.length){
+    const mr=await supabaseClient.from('materials').select('id,name,category,color,unit').in('id',ids);
+    if(mr.error)throw mr.error;
+    mats=mr.data||[];
+  }
+  const map=new Map(mats.map(m=>[m.id,m]));
+  const byTransfer=new Map();
+  for(const it of (items||[])){
+    const t=rows.find(x=>x.id===it.transfer_id);
+    if(t) byTransfer.set(it.transfer_id,{...t,material_id:it.material_id,quantity:Number(it.quantity||0),materials:map.get(it.material_id)||null});
+  }
+  return rows.flatMap(t=>{
+    const item=byTransfer.get(t.id);
+    return item?[item]:[];
+  });
+}
+
+async function cargarSaldosPrestamos(){
+  const box=$('loanBalanceList');
+  if(!box)return;
+  box.innerHTML='<div class="small">Cargando...</div>';
+  try{
+    const rows=await obtenerDatosPrestamos();
+    const otherIds=[...new Set(rows.map(x=>x.origin_module_id===selectedModule.id?x.destination_module_id:x.origin_module_id).filter(Boolean))];
+    let mods=[];
+    if(otherIds.length){const mr=await supabaseClient.from('modules').select('id,name').in('id',otherIds);if(mr.error)throw mr.error;mods=mr.data||[];}
+    const names=new Map(mods.map(m=>[m.id,m.name]));
+    const balances=new Map();
+    for(const x of rows){
+      if(!esPrestamo(x.movement_kind)&&!esDevolucion(x.movement_kind))continue;
+      const other=x.origin_module_id===selectedModule.id?x.destination_module_id:x.origin_module_id;
+      const family=familiaPrestamo(x.materials);
+      const key=other+'|'+family;
+      let b=balances.get(key)||{other, family, unit:x.materials?.unit||'', qty:0};
+      const q=Number(x.quantity||0);
+      const soyOrigen=x.origin_module_id===selectedModule.id;
+      if(esPrestamo(x.movement_kind)) b.qty += soyOrigen?q:-q;
+      else b.qty += soyOrigen?-q:q;
+      balances.set(key,b);
+    }
+    const active=[...balances.values()].filter(x=>Math.abs(x.qty)>0.000001).sort((a,b)=>(names.get(a.other)||'').localeCompare(names.get(b.other)||'','es')||a.family.localeCompare(b.family,'es'));
+    if(!active.length){box.innerHTML='<div class="notice">No hay préstamos pendientes entre módulos.</div>';return;}
+    box.innerHTML=active.map(x=>{
+      const qty=Math.abs(x.qty), unit=x.unit||'';
+      const favor=x.qty>0;
+      const text=favor
+        ? 'A <b>'+esc(names.get(x.other)||'Módulo')+'</b> le corresponde devolver a <b>'+esc(selectedModule.name)+'</b> <b>'+fmtQty(qty)+' '+esc(unit)+'</b> de '+esc(x.family)+'.'
+        : '<b>'+esc(selectedModule.name)+'</b> debe devolver a <b>'+esc(names.get(x.other)||'Módulo')+'</b> <b>'+fmtQty(qty)+' '+esc(unit)+'</b> de '+esc(x.family)+'.';
+      return '<div class="item">'+text+'</div>';
+    }).join('');
+  }catch(e){box.innerHTML='<div class="error">No se pudieron cargar los préstamos: '+esc(e.message||e)+'</div>';}
+}
+
+async function cargarTraspasos(){
+  const b=$("transferList");
+  b.innerHTML='<div class="small">Cargando...</div>';
+  try{
+    const rows=await obtenerDatosPrestamos();
+    if(!rows.length){b.innerHTML='<div class="notice">No hay traspasos registrados.</div>';await cargarSaldosPrestamos();return;}
+    const ids=[...new Set(rows.flatMap(x=>[x.origin_module_id,x.destination_module_id]).filter(Boolean))];
+    let mods=[];
+    if(ids.length){const mr=await supabaseClient.from('modules').select('id,name').in('id',ids);if(mr.error)throw mr.error;mods=mr.data||[];}
+    const names=new Map(mods.map(m=>[m.id,m.name]));
+    const visible=rows.slice(-30).reverse();
+    b.innerHTML=visible.map(x=>{
+      const origin=names.get(x.origin_module_id)||'Módulo';
+      const dest=names.get(x.destination_module_id)||'Módulo';
+      const mat=x.materials?.category==='Melamina'?(x.materials?.color||'Melamina'):(x.materials?.name||'Material');
+      return '<div class="item"><b>🔄 '+esc(x.movement_kind||'Transferencia')+'</b><div>'+esc(origin)+' → '+esc(dest)+'</div><div>'+esc(mat)+' · <b>'+fmtQty(x.quantity)+' '+esc(x.materials?.unit||'')+'</b></div><div>Estado: '+esc(x.status||'')+'</div><div class="small">'+new Date(x.created_at).toLocaleString('es-MX')+(x.note?' · '+esc(x.note):'')+'</div></div>';
+    }).join('');
+    await cargarSaldosPrestamos();
+  }catch(e){b.innerHTML='<div class="error">No se pudieron cargar los traspasos: '+esc(e.message||e)+'</div>';}
+}
+
+async function actualizarDisponibleTraspaso(){const id=$("transferMaterial").value;const box=$("transferAvailable");if(!id||!selectedModule){box.textContent='';return;}const {data,error}=await supabaseClient.from('inventory').select('quantity,materials(unit,name,color)').eq('module_id',selectedModule.id).eq('material_id',id).maybeSingle();if(error){box.textContent='';return;}box.textContent='Disponible en '+selectedModule.name+': '+Number(data?.quantity||0)+' '+(data?.materials?.unit||'');}
+async function abrirTraspasos(){if(!selectedModule)return alert('Primero selecciona un módulo.');mostrarPantalla('transferScreen');$("transferModule").textContent='Origen: '+selectedModule.name;$("transferOrigin").textContent=selectedModule.name;$("transferMessage").innerHTML='';$("transferAvailable").textContent='';await cargarCatalogoMateriales();const data=(availableModules||[]).filter(m=>m.active!==false&&m.id!==selectedModule.id).sort((a,b)=>(a.name||'').localeCompare(b.name||''));$("transferDestination").innerHTML='<option value="">Selecciona módulo...</option>'+(data||[]).map(m=>'<option value="'+m.id+'">'+esc(m.name)+'</option>').join('');await prepararCategoriasGenerico('transfer');await cargarTraspasos();}
+async function guardarTraspaso(){
+  const dest=$("transferDestination").value;
+  const id=$("transferMaterial").value;
+  const q=Number($("transferQty").value);
+  const kind=$("transferKind").value;
+  const note=$("transferNote").value.trim();
+  const msg=$("transferMessage");
+  if(!dest||!id||q<=0){msg.innerHTML='<div class="error">Selecciona módulo destino, material y una cantidad mayor que cero.</div>';return;}
+  if(dest===selectedModule.id){msg.innerHTML='<div class="error">El módulo destino debe ser diferente al origen.</div>';return;}
+  const chosen=(materialRows||[]).find(m=>m.id===id);
+  if(!chosen){msg.innerHTML='<div class="error">No se encontró el material seleccionado. Vuelve a elegirlo.</div>';return;}
+  const btn=$("saveTransferBtn");btn.disabled=true;btn.textContent='Procesando...';msg.innerHTML='';
+  try{
+    if(kind==='Devolución de préstamo'){
+      const all=await obtenerDatosPrestamos();
+      const family=familiaPrestamo(chosen);
+      let saldo=0;
+      for(const x of all){
+        const other=x.origin_module_id===selectedModule.id?x.destination_module_id:x.origin_module_id;
+        if(other!==dest || familiaPrestamo(x.materials)!==family)continue;
+        const soyOrigen=x.origin_module_id===selectedModule.id;
+        const xq=Number(x.quantity||0);
+        if(esPrestamo(x.movement_kind)) saldo += soyOrigen?xq:-xq;
+        else if(esDevolucion(x.movement_kind)) saldo += soyOrigen?-xq:xq;
+      }
+      if(saldo>=-0.000001)throw new Error('No existe un préstamo pendiente de '+family+' entre estos módulos.');
+      if(q>Math.abs(saldo)+0.000001)throw new Error('La devolución no puede ser mayor al préstamo pendiente: '+fmtQty(Math.abs(saldo))+' '+(chosen.unit||'')+'.');
+      const {error}=await supabaseClient.rpc('registrar_devolucion_prestamo',{
+        p_origin_module_id:selectedModule.id,p_destination_module_id:dest,p_material_id:id,p_quantity:q,p_note:note||null
+      });
+      if(error)throw new Error(error.message||'La función de devolución de préstamo no está instalada en Supabase.');
+      msg.innerHTML='<div class="success">✅ Devolución registrada. El saldo pendiente se actualizó.</div>';
+    }else{
+      const {error}=await supabaseClient.rpc('registrar_traspaso',{
+        p_origin_module_id:selectedModule.id,p_destination_module_id:dest,p_material_id:id,p_quantity:q,p_movement_kind:kind,p_note:note||null
+      });
+      if(error)throw error;
+      msg.innerHTML=kind==='Prestamo'?'<div class="success">✅ Préstamo registrado. El material se movió y quedó como pendiente de devolución.</div>':'<div class="success">✅ Traspaso realizado. Se descontó del origen y se agregó al destino.</div>';
+    }
+    $('transferQty').value='';$('transferNote').value='';await actualizarDisponibleTraspaso();await cargarTraspasos();
+  }catch(e){
+    const raw=String(e.message||e);
+    msg.innerHTML='<div class="error">No se pudo realizar el traspaso: '+esc(raw)+(kind==='Devolución de préstamo'&&/function|rpc|devolucion|devolución/i.test(raw)?'<br><small>Ejecuta el parche SQL de v65 en Supabase para habilitar las devoluciones de préstamo.</small>':'')+'</div>';
+  }finally{btn.disabled=false;btn.textContent='Confirmar traspaso';}
+}
+
+/* ===================== AUDITORÍA FÍSICA 63.6 =====================
+   Base recuperada de v58 + flujo nuevo de conteo por etapas.
+   El conteo físico NO modifica inventario. La conversión se hace al finalizar.
+*/
+const AF_STAGES=[
+ {key:'sueltas',icon:'🪵',title:'Piezas sueltas',desc:'Paredes, entrepaños, maleteros, zóclos, piezas de cajón, fondos, frentes, puertas y demás piezas cortadas.'},
+ {key:'armadas',icon:'🧩',title:'Piezas y conjuntos armados',desc:'Cajoneras, cajones, cuadros, espejos y demás conjuntos, conservando su estado físico.'},
+ {key:'herrajes',icon:'🔩',title:'Herrajes / ferretería',desc:'Correderas, jaladeras, bisagras, tubos, bridas y demás herrajes.'},
+ {key:'materiales',icon:'📦',title:'Materiales y consumibles',desc:'Hojas completas, MDF, PVC/cintilla, pegamento, stickers y materiales que se controlan directamente.'}
+];
+const AF_LOOSE=[
+ ['Paredes 191×40','piezas'],['Entrepaños 52×40','piezas'],['Maleteros 40×244','piezas'],['Maletero chico 191×40','piezas'],
+ ['Zóclos 10×52','piezas'],['Zóclos espejo 16×52','piezas'],['Zóclos espejo 18×52','piezas'],['Zóclos zapatera 27×10','piezas'],['Zóclos zapatera 27×12','piezas'],
+ ['Piezas cajón chicas 33×16.5','piezas'],['Piezas cajón grandes 46.4×16.5','piezas'],['Fondos cajón MDF 49.4×33','piezas'],['Fondos cajonera MDF 55×122','piezas'],
+ ['Frentes 18×54','piezas'],['Puertas zapatera 172×30','piezas'],['Puertas Vera','piezas'],['Puertas Max','piezas'],
+ ['Marcos verticales espejo 10×160','piezas'],['Marcos horizontales espejo 10×35','piezas']
+];
+function afHardwareItems(){return [...new Set((materialRows||[]).filter(m=>m.active!==false&&String(m.category||'').toLowerCase()==='herrajes').map(m=>materialLabel(m)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));}
+const AF_CONSUMABLES=[
+ ['Hoja de melamina 15 mm','hojas'],['Hoja MDF blanco 5 mm','hojas'],['Hoja MDF natural 3 mm','hojas'],
+ ['PVC / cintilla','metros'],['Cintilla de plancha','metros'],['Pegamento granulado','kg'],['Pegamento amarillo por kilo','kg'],['Pegamento 5000','piezas'],['Stickers','piezas']
+];
+function afLoad(){try{return JSON.parse(localStorage.getItem('auditoria_fisica_65')||'{}')}catch(e){return {}}}
+function afSave(x){localStorage.setItem('auditoria_fisica_65',JSON.stringify(x))}
+function afState(){const all=afLoad();const id=selectedModule?.id||selectedModule?.name||'sin-modulo'; if(!all[id])all[id]={active:false,stage:0,closed:{},counts:[],auditType:null}; if(!all[id].auditType)all[id].auditType='Seguimiento'; return {all,id,s:all[id]}}
+async function afSelectMode(mode){
+  const {all,id,s}=afState();
+  if(s.active){alert('La auditoría ya está iniciada. Termínala o vuelve a abrirla para continuar.');return;}
+  if(mode==='Inicial'){
+    try{
+      const {data,error}=await supabaseClient.from('physical_audits').select('id').eq('module_id',selectedModule.id).eq('audit_type','Inicial').limit(1);
+      if(error)throw error;
+      if(data&&data.length){alert('Este módulo ya tiene una Auditoría inicial. Las siguientes deben registrarse como Auditoría de seguimiento.');return;}
+    }catch(e){alert('No se pudo comprobar si ya existe una auditoría inicial: '+(e.message||e));return;}
+  }
+  s.auditType=mode;s.active=false;s.stage=0;s.closed={};s.counts=[];all[id]=s;afSave(all);renderPhysicalAudit();
+}
+function afStart(){const {all,id,s}=afState();if(!s.auditType)return alert('Primero selecciona si esta auditoría es Inicial o de Seguimiento.');s.active=true;s.stage=0;s.closed={};s.counts=[];s.finished=false;all[id]=s;afSave(all);renderPhysicalAudit()}
+function afCurrentStage(){const {s}=afState();return AF_STAGES[Math.min(s.stage,AF_STAGES.length-1)]}
+function afRows(st){const {s}=afState();return s.counts.filter(x=>x.stage===st.key)}
+function afTotal(st){return afRows(st).reduce((n,x)=>n+Number(x.qty||0),0)}
+function afClose(){const {all,id,s}=afState();const st=afCurrentStage();s.closed[st.key]=true;if(s.stage<AF_STAGES.length-1)s.stage++;all[id]=s;afSave(all);renderPhysicalAudit()}
+function afReopen(key){const {all,id,s}=afState();s.closed[key]=false;s.stage=AF_STAGES.findIndex(x=>x.key===key);all[id]=s;afSave(all);renderPhysicalAudit()}
+function afAdd(){const {all,id,s}=afState();const st=afCurrentStage();if(s.closed[st.key])return alert('Este conteo está cerrado. Puedes reabrirlo para agregar otro hallazgo.');
+ const type=$('afType')?.value||'';const qty=Number($('afQty')?.value||0);if(!type||!qty||qty<=0)return alert('Selecciona una pieza y captura una cantidad válida.');
+ const isDrawer=st.key==='armadas'&&type==='Cajón armado';
+ const isFrameOnly=st.key==='armadas'&&(type==='Cuadro sin fondo'||type==='Cuadro con fondo');
+ let color=$('afColor')?.value||'';
+ let frontColor=st.key==='armadas'&&type==='Cajón armado'?($('afFrontColor')?.value||''):'';
+ let sameColor=st.key==='armadas'&&type==='Cajón armado'?!!$('afSameColor')?.checked:false;
+ if(sameColor&&frontColor)color=frontColor;
+ let state=$('afState')?.value||'';
+ if(type==='Cuadro sin fondo')state='Sin fondo';
+ if(type==='Cuadro con fondo')state='Con fondo';
+ const note=$('afNote')?.value.trim()||'';
+ s.selectedType=type;s.selectedColor=color;s.selectedFrontColor=type==='Cajón armado'?frontColor:'';s.selectedSameColor=type==='Cajón armado'?sameColor:false;s.selectedState=state;
+ s.counts.push({stage:st.key,type,qty,color,frontColor:type==='Cajón armado'?frontColor:'',sameColor:type==='Cajón armado'?sameColor:false,state,note,date:new Date().toLocaleString()});all[id]=s;afSave(all);renderPhysicalAudit();}
+function afOptions(arr,selected){return arr.map(x=>{const v=Array.isArray(x)?x[0]:x;return '<option value="'+esc(v)+'" '+(v===selected?'selected':'')+'>'+esc(v)+'</option>'}).join('')}
+function afItems(st){if(st.key==='sueltas')return AF_LOOSE.map(x=>x[0]);if(st.key==='herrajes')return afHardwareItems();if(st.key==='materiales')return AF_CONSUMABLES.map(x=>x[0]);return ['Cajonera 3 cajones','Cajonera 5 cajones','Cajonera espejo','Cajonera Emma','Cajón armado','Cuadro sin fondo','Cuadro con fondo','Espejo armado','Puerta armada'];}
+function afNeedsColor(st){if(st.key==='herrajes'||st.key==='materiales')return false;if(st.key==='sueltas'){const t=$("afType")?.value||'';return !/^Fondos (cajón|cajonera) MDF/i.test(t);}if(st.key==='armadas'){const t=$("afType")?.value||'';return t!=='Espejo armado';}return false;}
+function afStateOptions(st){if(st.key!=='armadas')return '';let type=$('afType')?.value||'';if(type.startsWith('Cajonera'))return '<option value="Con herrajes">Con herrajes</option><option value="Sin herrajes">Sin herrajes</option>';if(type==='Cajón armado')return '<option value="Con herrajes y con frente">Con herrajes y con frente</option><option value="Con herrajes y sin frente">Con herrajes y sin frente</option><option value="Sin herrajes y con frente">Sin herrajes y con frente</option><option value="Sin herrajes y sin frente">Sin herrajes y sin frente</option>';if(type.startsWith('Cuadro'))return '<option value="Con fondo">Con fondo</option><option value="Sin fondo">Sin fondo</option>';return '<option value="Armado">Armado</option>';}
+function afRerenderFields(){const st=afCurrentStage();const type=$("afType")?.value||'';const stateEl=$("afStateWrap");const colorEl=$("afColor");const frontWrap=$("afFrontColorWrap");const sameWrap=$("afSameColorWrap");const isDrawer=st.key==='armadas'&&type==='Cajón armado';const isCuadro=st.key==='armadas'&&(type==='Cuadro sin fondo'||type==='Cuadro con fondo');if(frontWrap)frontWrap.style.display=isDrawer?'block':'none';if(sameWrap)sameWrap.style.display=isDrawer?'block':'none';if(stateEl){const opts=afStateOptions(st);stateEl.innerHTML=opts?'<label>Estado</label><select id="afState">'+opts+'</select>':'';if($('afState')){if(type==='Cuadro sin fondo')$('afState').value='Sin fondo';else if(type==='Cuadro con fondo')$('afState').value='Con fondo';else if(afState().s.selectedState&&[...$('afState').options].some(o=>o.value===afState().s.selectedState))$('afState').value=afState().s.selectedState;}}if(colorEl&&afState().s.selectedColor&&[...colorEl.options].some(o=>o.value===afState().s.selectedColor))colorEl.value=afState().s.selectedColor;if($('afFrontColor'))$('afFrontColor').value=afState().s.selectedFrontColor&&[...$('afFrontColor').options].some(o=>o.value===afState().s.selectedFrontColor)?afState().s.selectedFrontColor:'Blanco';if($('afSameColor')){$('afSameColor').checked=!!afState().s.selectedSameColor;afSyncSameColor();}afRenderDeductionInfo();}
+function afSyncSameColor(){const cb=$('afSameColor'),fc=$('afFrontColor'),sc=$('afColor');if(!cb||!fc||!sc)return;const same=cb.checked;if(same){sc.value=fc.value;sc.disabled=true;}else sc.disabled=false;afRenderDeductionInfo();}
+function afRenderDeductionInfo(){const st=afCurrentStage();const type=$('afType')?.value||'';const box=$('afDeductionInfo');if(!box)return;const color=$('afColor')?.value||'Blanco';const front=$('afFrontColor')?.value||'';const same=!!$('afSameColor')?.checked;let html='';if(type==='Cuadro sin fondo'){html='<b>Material a considerar:</b><br>• Melamina 15 mm: piezas del cuadro, color <b>'+esc(color)+'</b><br>• No lleva frente<br>• No lleva fondo MDF<br>• No agrega herrajes';}else if(type==='Cuadro con fondo'){html='<b>Material a considerar:</b><br>• Melamina 15 mm: piezas del cuadro, color <b>'+esc(color)+'</b><br>• Fondo: el que corresponda al tipo de cuadro<br>• No lleva frente<br>• No agrega herrajes';}else if(type==='Cajón armado'){html='<b>Material a considerar:</b><br>• Piezas del cajón: melamina 15 mm, color <b>'+esc(same?front:color)+'</b><br>• Frente: melamina 15 mm, color <b>'+esc(front||'—')+'</b><br>• Fondo de cajón: MDF 3 mm<br>• Herrajes: según el estado seleccionado';}else if(type.startsWith('Cajonera')){html='<b>Material a considerar:</b><br>• Cajonera sola: paredes, entrepaños y zóclos de melamina 15 mm, color <b>'+esc(color)+'</b><br>• Sin cajones<br>• Sin frentes<br>• Fondo de cajonera: MDF<br>• Herrajes: según el estado seleccionado';}else if(st.key==='armadas'){html='<b>Material a considerar:</b><br>• Se conserva el color/material capturado para este artículo.<br>• No se agregan herrajes salvo que el artículo y su estado los indiquen.';}else if(st.key==='sueltas'){html='<b>Material a considerar:</b><br>• Se descontará únicamente la pieza seleccionada, del color/material indicado.<br>• No agrega herrajes.';}else if(st.key==='herrajes'){html='<b>Material a considerar:</b><br>• Se registra como herraje/ferretería. No descuenta melamina ni MDF.';}else if(st.key==='materiales'){html='<b>Material a considerar:</b><br>• Se registra directamente con la unidad del material seleccionado.';}box.innerHTML=html;}
+function renderPhysicalAudit(){
+ const host=$('physicalAuditApp'); if(!host||!selectedModule)return; const {s}=afState(); const st=afCurrentStage(); const rows=afRows(st); const idx=AF_STAGES.findIndex(x=>x.key===st.key)+1;
+ $('auditModule').textContent='Módulo: '+(selectedModule.name||'');
+ if(!s.active){host.innerHTML='<div class="card"><h2>📋 Tipo de auditoría</h2><div class="notice"><b>Auditoría inicial:</b> establece el inventario físico de partida del módulo.<br><b>Auditoría de seguimiento:</b> compara el físico contra el stock teórico actual; guardarla no modifica el inventario.</div><div class="categoryButtons"><button type="button" class="categoryBtn '+(s.auditType==='Inicial'?'selected':'')+'" onclick="afSelectMode(\'Inicial\')">🟢 Auditoría inicial</button><button type="button" class="categoryBtn '+(s.auditType==='Seguimiento'?'selected':'')+'" onclick="afSelectMode(\'Seguimiento\')">🔵 Auditoría de seguimiento</button></div><div class="small" style="margin-top:10px">La inicial solo puede existir una vez por módulo. Después se usan seguimientos.</div></div><div class="card"><div class="note"><b>Esta auditoría se cuenta por etapas.</b><br>Primero piezas sueltas, después armadas, luego herrajes y finalmente materiales.</div><div class="grid">'+AF_STAGES.map((x,i)=>'<div class="note"><b>'+x.icon+' '+x.title+'</b><br><small>'+x.desc+'</small></div>').join('')+'</div><div class="actions"><button class="primary" onclick="afStart()">▶️ Iniciar auditoría '+(s.auditType?' '+esc(s.auditType):'')+'</button><button onclick="afResume()">Continuar auditoría anterior</button></div></div>';return;}
+ const closed=!!s.closed[st.key]; const items=afItems(st); const first=(s.selectedType&&items.includes(s.selectedType))?s.selectedType:(items[0]||''); const colors=typeof COLORES_MELAMINA!=='undefined'?COLORES_MELAMINA:[];
+ host.innerHTML='<div class="card"><div class="moduleHeader"><h2>'+st.icon+' '+st.title+'</h2><span class="moduleTag">ETAPA '+idx+' DE '+AF_STAGES.length+'</span></div><div class="notice"><b>Tipo de auditoría:</b> '+esc(s.auditType||'Seguimiento')+' — '+(s.auditType==='Inicial'?'esta toma será el punto de partida físico del módulo.':'esta toma se compara contra el stock teórico actual y no cambia el inventario.')+'</div><p class="small">'+st.desc+'<br><b>Puedes registrar varias cantidades.</b> Ejemplo: 15 + 16 + 4 maleteros = 35.</p><div class="inventoryTiles"><div><b>Registros</b><br>'+rows.length+'</div><div><b>Total</b><br>'+afTotal(st).toFixed(2)+'</div><div><b>Estado</b><br>'+(closed?'🔒 Cerrada':'🟢 Abierta')+'</div></div></div>'+
+ '<div class="card"><h3>Agregar conteo</h3><div class="grid"><div><label>Pieza / artículo</label><select id="afType" onchange="afRerenderFields()">'+afOptions(items,first)+'</select></div>'+((afNeedsColor(st))?'<div><label>Color de estructura / piezas</label><select id="afColor">'+afOptions(colors,s.selectedColor||'Blanco')+'</select></div>':'')+((st.key==='armadas'&&first==='Cajón armado')?'<div id="afFrontColorWrap"><label>Color de frente</label><select id="afFrontColor" onchange="afSyncSameColor()">'+afOptions(colors,s.selectedFrontColor||'Blanco')+'</select></div><div id="afSameColorWrap"><label style="display:flex;align-items:center;gap:10px;margin-top:8px"><input id="afSameColor" type="checkbox" style="width:20px;height:20px" onchange="afSyncSameColor()" '+(s.selectedSameColor?'checked':'')+'> Piezas del cajón del mismo color que el frente</label><div class="small">Si se marca, las piezas de melamina del cajón se consideran del mismo color que el frente. El fondo de cajón de MDF no cambia de material.</div></div>':'<div id="afFrontColorWrap" style="display:none"></div><div id="afSameColorWrap" style="display:none"></div>')+'<div id="afStateWrap">'+(afStateOptions(st)?'<label>Estado</label><select id="afState">'+afStateOptions(st)+'</select>':'')+'</div><div><label>Cantidad encontrada en esta ubicación</label><input id="afQty" type="number" min="0.01" step="0.01" value="1"></div><div><label>Nota / ubicación</label><input id="afNote" placeholder="Ej. área de corte, bodega, pasillo..."></div></div><div id="afDeductionInfo" class="notice" style="margin-top:10px"></div><div class="actions">'+(!closed?'<button class="primary" onclick="afAdd()">➕ Agregar conteo</button>':'<button class="primary" onclick="afReopen(\''+st.key+'\')">🔓 Reabrir conteo</button>')+(!closed?'<button onclick="afClose()">➡️ Siguiente</button>':'')+'</div></div>'+
+ '<div class="card"><h3>Conteos registrados</h3><div class="scroll"><table style="min-width:860px"><tr><th>Artículo</th><th>Color estructura / piezas</th><th>Color frente</th><th>Todo del color del frente</th><th>Estado</th><th>Cantidad</th><th>Ubicación / nota</th></tr>'+rows.map(x=>'<tr><td><b>'+esc(x.type)+'</b></td><td>'+esc(x.color||'—')+'</td><td>'+esc(x.frontColor||'—')+'</td><td style="text-align:center">'+(x.sameColor?'Sí':'No')+'</td><td>'+esc(x.state||'—')+'</td><td>'+Number(x.qty).toFixed(2)+'</td><td>'+esc(x.note||'—')+'</td></tr>').join('')||'<tr><td colspan="7">Todavía no hay conteos en esta etapa.</td></tr>'+'</table></div></div>'+
+ '<div class="card"><div class="actions"><button onclick="afBackStage()">↩️ Etapa anterior</button><button onclick="afSummary()">📋 Ver resumen</button></div></div>';afRerenderFields();
+}
+function afResume(){const {all,id,s}=afState();if(s.active)return renderPhysicalAudit();const any=Object.values(all).find(x=>x.active);if(any){/* no-op; selection remains module-specific */}alert('No hay una auditoría activa para este módulo. Presiona Iniciar auditoría.');}
+function afBackStage(){const {all,id,s}=afState();if(s.stage>0){s.stage--;s.closed[AF_STAGES[s.stage].key]=false;all[id]=s;afSave(all);renderPhysicalAudit()}}
+function afSummary(){const {s}=afState();let html='<div class="card"><h2>📋 Resumen de auditoría</h2>';AF_STAGES.forEach(st=>{const r=afRows(st);html+='<div class="note"><b>'+st.icon+' '+st.title+'</b> — '+r.reduce((n,x)=>n+Number(x.qty||0),0).toFixed(2)+' elementos en '+r.length+' registros.</div>'});html+='<div class="actions"><button class="primary" onclick="afFinalize()">✅ Finalizar conteo</button><button onclick="renderPhysicalAudit()">← Volver al conteo</button></div></div>'; $('physicalAuditApp').innerHTML=html;}
+function afMaterialByColor(color){return (materialRows||[]).find(m=>m.active!==false&&m.category==='Melamina'&&String(m.color||'').toLowerCase()===String(color||'').toLowerCase())||null;}
+function afMaterialByName(name){const n=normalizarTexto(name);return (materialRows||[]).find(m=>m.active!==false&&normalizarTexto(m.name)===n)||null;}
+function afAddPhysical(map,mat,qty){if(!mat||!qty||qty<=0)return;if(!map.has(mat.id))map.set(mat.id,{material_id:mat.id,physical:0});map.get(mat.id).physical+=Number(qty);}
+function afAddMelSheet(map,color,sheets){afAddPhysical(map,afMaterialByColor(color),sheets);}
+function afSharedWallShelfSheets(walls,shelves){
+  walls=Math.max(0,Number(walls||0)); shelves=Math.max(0,Number(shelves||0));
+  if(!walls&&!shelves)return 0;
+  // Plan compartido confirmado: 3 paredes + 3 entrepaños = 1 hoja.
+  // Primero se aprovechan hojas completas para las paredes; los entrepaños
+  // restantes usan el rendimiento independiente de 14 por hoja.
+  const pairedSheets=Math.ceil(walls/3);
+  const shelvesFromPaired=pairedSheets*3;
+  const remainingShelves=Math.max(0,shelves-shelvesFromPaired);
+  return pairedSheets+Math.ceil(remainingShelves/14);
+}
+function afBuildPhysicalMaterialMap(counts){
+ const map=new Map(),unknown=[],conversion=[];
+ const addM=(name,q,source='')=>{if(!q||q<=0)return;const mat=afMaterialByName(name);if(mat){afAddPhysical(map,mat,q);conversion.push({material_id:mat.id,material_name:mat.name||name,color:mat.color||'',unit:mat.unit||'',sheets:Number(q),source});}else unknown.push({type:source||name,qty:q,expectedMaterial:name});};
+ const addSheet=(color,q,source)=>{if(!q||q<=0)return;const mat=afMaterialByColor(color);if(mat){afAddPhysical(map,mat,q);conversion.push({material_id:mat.id,material_name:mat.name||color,color:mat.color||color,unit:mat.unit||'hojas',sheets:Number(q),source});}else unknown.push({type:source||('Melamina '+color),qty:q,color});};
+ for(const x of (counts||[])){
+  const q=Number(x.qty||0);if(q<=0)continue;
+  const t=x.type||'',c=x.color||'Blanco',fc=x.frontColor||c,same=!!x.sameColor,base=same?fc:c;
+  if(x.stage==='sueltas'){
+   const mel={"Paredes 191×40":1/3,"Entrepaños 52×40":1/14,"Maleteros 40×244":1/3,"Maletero chico 191×40":1/3,"Zóclos 10×52":1/44,"Zóclos espejo 16×52":1/28,"Zóclos espejo 18×52":1/24,"Piezas cajón chicas 33×16.5":1/49,"Piezas cajón grandes 46.4×16.5":1/35,"Frentes 18×54":1/24,"Marcos verticales espejo 10×160":1/11,"Marcos horizontales espejo 10×35":1/18};
+   if(mel[t])addSheet(c,q*mel[t],t);else if(t==='Fondos cajón MDF 49.4×33')addM('MDF natural 3 mm',q/14,t);else if(t==='Fondos cajonera MDF 55×122')addM('MDF natural 3 mm',q/4,t);else unknown.push(x);
+  }else if(x.stage==='armadas'){
+   if(t==='Cajón armado'){
+    addSheet(base,q*2/49+q*2/35,t+' · estructura');
+    if(x.state&&x.state.includes('con frente'))addSheet(fc,q/24,t+' · frente');
+    addM('MDF natural 3 mm',q/14,t+' · fondo de cajón');
+    if(x.state&&x.state.includes('Con herrajes')){addM('Juego de corredera',q,t+' · corredera');addM('Jaladeras',q,t+' · jaladera');}
+   }else if(t.startsWith('Cajonera')){
+    const r=t==='Cajonera 3 cajones'?{w:2,s:5,z10:2,cb:1}:t==='Cajonera 5 cajones'?{w:2,s:4,z10:2,cb:1}:t==='Cajonera espejo'?{w:2,s:5,z16:1,z18:1,cb:1}:t==='Cajonera Emma'?{w:2,s:4,z10:5,cb:1}:null;
+    if(r){
+      const structureSheets=afSharedWallShelfSheets(q*r.w,q*r.s);
+      addSheet(base,structureSheets,t+' · estructura (paredes + entrepaños)');
+      const zSheets=q*((r.z10||0)/44+(r.z16||0)/28+(r.z18||0)/24);
+      if(zSheets>0)addSheet(base,zSheets,t+' · zóclos');
+      addM('MDF natural 3 mm',q*r.cb/4,t+' · fondo de cajonera');
+      // IMPORTANTE: la cajonera sola NO incluye cajones, piezas de cajón ni frentes.
+    }else unknown.push(x);
+   }else if(t==='Espejo armado'){
+    addSheet(base,q*2/11,t+' · marcos verticales');addSheet(base,q*2/18,t+' · marcos horizontales');
+    const mm=(materialRows||[]).find(m=>m.active!==false&&/espejo/i.test(m.name||''));
+    if(mm){afAddPhysical(map,mm,q);conversion.push({material_id:mm.id,material_name:mm.name||'Espejo',color:mm.color||'',unit:mm.unit||'piezas',sheets:q,source:t+' · espejo'});}else unknown.push(x);
+   }else unknown.push(x);
+  }else if(x.stage==='herrajes'||x.stage==='materiales'){
+   const mat=afMaterialByName(t);if(mat)afAddPhysical(map,mat,q);else unknown.push(x);
+  }
+ }
+ const grouped=new Map();
+ for(const c of conversion){
+   const k=c.material_id+'|'+(c.color||'')+'|'+c.unit;
+   if(!grouped.has(k))grouped.set(k,{...c,sheets:0,sources:[]});
+   const g=grouped.get(k);g.sheets+=Number(c.sheets||0);if(c.source)g.sources.push(c.source);
+ }
+ const conversionGrouped=[...grouped.values()].map(x=>({...x,source:x.sources.join(' + ')}));
+ return {map,unknown,conversion:conversionGrouped};
+}
+async function afPersistItems(auditId,counts){
+  // Conservado para compatibilidad con auditorías antiguas; las nuevas usan el RPC atómico.
+  const inv=await supabaseClient.from('inventory_view').select('material_id,quantity').eq('module_id',selectedModule.id);
+  if(inv.error)throw inv.error;
+  const theoretical=new Map((inv.data||[]).map(r=>[r.material_id,Number(r.quantity||0)]));
+  const built=afBuildPhysicalMaterialMap(counts);
+  const ids=new Set([...theoretical.keys(),...built.map.keys()]);
+  const rows=[...ids].map(id=>({audit_id:auditId,material_id:id,theoretical:Number(theoretical.get(id)||0),physical:Number(built.map.get(id)?.physical||0)}));
+  if(rows.length){const {error}=await supabaseClient.from('physical_audit_items').insert(rows);if(error)throw error;}
+  return {unknown:built.unknown,conversion:built.conversion,rows};
+}
+async function afFinalize(){
+  const {all,id,s}=afState();
+  if(AF_STAGES.some(st=>!s.closed[st.key])){alert('Primero cierra las cuatro etapas con Siguiente.');return;}
+  if(!s.auditType){alert('Selecciona Inicial o Seguimiento antes de finalizar.');return;}
+  try{
+    const built=afBuildPhysicalMaterialMap(s.counts);
+    const inv=await supabaseClient.from('inventory_view').select('material_id,quantity').eq('module_id',selectedModule.id);
+    if(inv.error)throw inv.error;
+    const theoretical=new Map((inv.data||[]).map(r=>[r.material_id,Number(r.quantity||0)]));
+    const ids=new Set([...theoretical.keys(),...built.map.keys()]);
+    const rows=[...ids].map(material_id=>({
+      material_id,
+      theoretical:Number(theoretical.get(material_id)||0),
+      physical:Number(built.map.get(material_id)?.physical||0),
+      detail:{conversion:(built.conversion||[]).filter(x=>x.material_id===material_id)}
+    }));
+    const totalMelamina=(built.conversion||[]).filter(x=>String(x.unit||'').toLowerCase().includes('hoja')&&/melamina/i.test(String(x.material_name||''))).reduce((n,x)=>n+Number(x.sheets||0),0);
+    const totalMdf=(built.conversion||[]).filter(x=>/mdf/i.test(String(x.material_name||''))).reduce((n,x)=>n+Number(x.sheets||0),0);
+    const conversionReport={version:'66.6',totalSheets:Number((totalMelamina+totalMdf).toFixed(4)),melaminaSheets:Number(totalMelamina.toFixed(4)),mdfSheets:Number(totalMdf.toFixed(4)),materials:built.conversion||[],unknown:built.unknown||[]};
+    const notes=JSON.stringify({version:'66.6',module_id:selectedModule.id,module_name:selectedModule.name,audit_type:s.auditType,counts:s.counts,conversion:conversionReport});
+    const {data,error}=await supabaseClient.rpc('finalizar_auditoria_fisica',{
+      p_module_id:selectedModule.id,
+      p_audit_type:s.auditType,
+      p_notes:notes,
+      p_items:rows
+    });
+    if(error)throw error;
+    s.finishedAt=new Date().toLocaleString();s.finished=true;s.supabaseAuditId=data?.audit_id||null;s.conversion=conversionReport;s.appliedChanges=Number(data?.applied_changes||0);all[id]=s;afSave(all);
+    const lines=(built.conversion||[]).map(x=>'• '+(x.color?x.color+' — ':'')+(x.material_name||'Material')+': '+Number(x.sheets||0).toFixed(4)+' '+(x.unit||'hojas')+' · '+(x.source||'')).join('\n');
+    const msg=(s.auditType==='Inicial'?'✅ AUDITORÍA INICIAL GUARDADA Y APLICADA AL INVENTARIO.':'✅ AUDITORÍA DE SEGUIMIENTO GUARDADA.')+'\n\nMódulo: '+selectedModule.name+'\nTotal hojas equivalentes: '+Number(conversionReport.totalSheets.toFixed(4))+'\nMelamina: '+Number(conversionReport.melaminaSheets.toFixed(4))+' hojas\nMDF: '+Number(conversionReport.mdfSheets.toFixed(4))+' hojas\n\nCONVERSIÓN:\n'+(lines||'• No hubo materiales convertibles.')+(built.unknown.length?'\n\n⚠️ Sin receta/material: '+built.unknown.length:'');
+    alert(msg);
+    afShowFinalReport(conversionReport,s.auditType);
+  }catch(e){alert('❌ NO se guardó la auditoría ni se modificó el inventario.\n\n'+(e.message||e));}
+}
+function afShowFinalReport(rep,type){
+  const rows=(rep.materials||[]).map(x=>'<tr><td>'+esc(x.material_name||'Material')+'</td><td>'+esc(x.color||'—')+'</td><td><b>'+Number(x.sheets||0).toFixed(4)+'</b></td><td>'+esc(x.source||'—')+'</td></tr>').join('');
+  $('physicalAuditApp').innerHTML='<div class="card"><h2>✅ Auditoría finalizada</h2><div class="notice"><b>Tipo:</b> '+esc(type)+'<br><b>Módulo:</b> '+esc(selectedModule.name)+'</div><div class="grid"><div class="note"><b>'+Number(rep.totalSheets||0).toFixed(4)+'</b><br>Hojas totales</div><div class="note"><b>'+Number(rep.melaminaSheets||0).toFixed(4)+'</b><br>Hojas de melamina</div><div class="note"><b>'+Number(rep.mdfSheets||0).toFixed(4)+'</b><br>Hojas de MDF</div></div><h3>Material convertido</h3><div class="scroll"><table style="min-width:760px"><tr><th>Material</th><th>Color</th><th>Hojas</th><th>Origen</th></tr>'+(rows||'<tr><td colspan="4">No hubo conversión.</td></tr>')+'</table></div><div class="actions"><button class="primary" onclick="abrirReportes()">📊 Ver esta auditoría en Reportes</button><button onclick="volverDashboard()">← Menú principal</button></div></div>';
+}
+async function abrirAuditoria(){if(!selectedModule){alert('Primero selecciona un módulo.');return;}mostrarPantalla('auditScreen');try{await cargarCatalogoMateriales();}catch(e){$('physicalAuditApp').innerHTML='<div class="error">No se pudo cargar el catálogo de materiales: '+esc(e.message||e)+'</div>';return;}renderPhysicalAudit();}
+
+async function abrirReportes(){mostrarPantalla('reportScreen');$("reportModule").textContent='Módulo: '+selectedModule.name;await cargarReportes();}
+async function cargarReportes(){
+ try{
+  const {data:i,error:ie}=await supabaseClient.from('inventory_view').select('*').eq('module_id',selectedModule.id).order('category').order('material_name');
+  const {data:m,error:me}=await supabaseClient.from('movements').select('type,quantity,note,created_at,materials(name,category,color,unit)').eq('module_id',selectedModule.id).order('created_at',{ascending:false});
+  const {data:aud,error:ae}=await supabaseClient.from('physical_audits').select('id,audit_type,created_at,applied,applied_at,notes').eq('module_id',selectedModule.id).order('created_at',{ascending:false}).limit(50);
+  if(ie||me||ae){$('reportSummary').innerHTML='<div class="error">No se pudo cargar el reporte.</div>';return;}
+  const rows=i||[],mov=m||[],audits=aud||[];
+  const initial=mov.filter(x=>String(x.note||'').toLowerCase().includes('inventario inicial')).reduce((a,x)=>a+Number(x.quantity||0),0);
+  const entries=mov.filter(x=>x.type==='Entrada'&&!String(x.note||'').toLowerCase().includes('inventario inicial')&&!String(x.note||'').toLowerCase().includes('ajuste')).reduce((a,x)=>a+Number(x.quantity||0),0);
+  const exits=mov.filter(x=>x.type==='Salida'&&!String(x.note||'').toLowerCase().includes('merma')&&!String(x.note||'').toLowerCase().includes('ajuste')).reduce((a,x)=>a+Number(x.quantity||0),0);
+  const merma=mov.filter(x=>String(x.note||'').toLowerCase().startsWith('merma')).reduce((a,x)=>a+Number(x.quantity||0),0);
+  const adjustments=mov.filter(x=>String(x.note||'').toLowerCase().includes('ajuste')).reduce((a,x)=>a+(x.type==='Entrada'?1:-1)*Number(x.quantity||0),0);
+  $('reportSummary').innerHTML='<p><b>'+rows.filter(x=>Number(x.quantity||0)>0).length+'</b> materiales con existencia registrada.</p>';
+  $('reportFormula').innerHTML='<div><b>Inventario inicial:</b> '+auditFmt(initial)+'</div><div><b>+ Entradas:</b> '+auditFmt(entries)+'</div><div><b>− Salidas:</b> '+auditFmt(exits)+'</div><div><b>− Mermas:</b> '+auditFmt(merma)+'</div><div><b>± Ajustes autorizados:</b> '+auditFmt(adjustments)+'</div><hr><div style="font-size:18px"><b>Stock actual:</b> '+auditFmt(rows.reduce((a,x)=>a+Number(x.quantity||0),0))+'</div>';
+  const initialAudit=audits.find(x=>x.audit_type==='Inicial');
+  const lastFollow=audits.find(x=>x.audit_type==='Seguimiento');
+  let initialConversion=null;
+  if(initialAudit){try{const parsed=JSON.parse(initialAudit.notes||'{}');initialConversion=parsed.conversion||null;}catch(_){initialConversion=null;}}
+  const conversionBox=initialConversion?('<div class="card" style="margin-top:12px"><h3>🧮 Conversión de la Auditoría inicial</h3><div class="notice"><b>Total de hojas equivalentes:</b> '+auditFmt(initialConversion.totalSheets||0)+'</div>'+((initialConversion.materials||[]).length?'<div class="scroll"><table style="min-width:720px"><tr><th>Material</th><th>Color</th><th>Hojas</th><th>Origen</th></tr>'+initialConversion.materials.map(x=>'<tr><td>'+esc(x.material_name||'Material')+'</td><td>'+esc(x.color||'—')+'</td><td><b>'+auditFmt(x.sheets||0)+'</b></td><td>'+esc(x.source||'—')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No hay materiales convertidos registrados.</div>')+'</div>'):'<div class="notice">No hay detalle de conversión de la Auditoría inicial. Si la auditoría fue creada con una versión anterior, vuelve a realizarla con la versión actual para generar el desglose.</div>';
+  $('reportConversionBox')?.remove(); const wrap=document.createElement('div');wrap.id='reportConversionBox';wrap.innerHTML=conversionBox;$('reportAudits').parentElement.appendChild(wrap);
+  $('reportAudits').innerHTML=(initialAudit?'<div class="item">🟢 <b>Auditoría inicial:</b> '+new Date(initialAudit.created_at).toLocaleString('es-MX')+'</div>':'<div class="notice">Aún no existe auditoría inicial.</div>')+(lastFollow?'<div class="item">🔵 <b>Última auditoría de seguimiento:</b> '+new Date(lastFollow.created_at).toLocaleString('es-MX')+'<br><span class="small">El conteo de seguimiento no modifica el inventario.</span></div>':'');
+  if(lastFollow){$('reportAudits').innerHTML+='<button type="button" class="primary" id="promoteAuditBtn">🔐 Pasar el stock real de la última auditoría a nuevo punto de partida</button><div class="small" style="margin-top:8px">Esta acción requiere PIN. Conserva el historial y registra los ajustes necesarios para que la siguiente auditoría parta del stock real.</div>';$('promoteAuditBtn').onclick=()=>promoverUltimaAuditoria(lastFollow.id);}
+  $('reportInventory').innerHTML=rows.length?rows.map(r=>'<div class="item"><b>'+esc(r.category==='Melamina'?(r.color||r.material_name):r.material_name)+'</b><div>'+auditFmt(r.quantity)+' '+esc(r.unit)+'</div></div>').join(''):'<div class="notice">Sin existencias registradas.</div>';
+  $('reportMovements').innerHTML=mov.slice(0,50).map(x=>'<div class="item"><b>'+esc(x.type)+'</b> · '+auditFmt(x.quantity)+' '+esc(x.materials?.unit||'')+'<div>'+esc(x.materials?.category==='Melamina'?(x.materials?.color||x.materials?.name):x.materials?.name||'Material')+'</div><div class="small">'+esc(x.note||'')+' · '+new Date(x.created_at).toLocaleString('es-MX')+'</div></div>').join('')||'<div class="notice">Sin movimientos.</div>';
+ }catch(e){const msg=esc(e?.message||e||'Error desconocido');$('reportSummary').innerHTML='<div class="error">No se pudo cargar el reporte: '+msg+'</div>';$('reportFormula').innerHTML='<div class="notice">No disponible.</div>';$('reportAudits').innerHTML='<div class="notice">No se pudo cargar el control de auditorías.</div>';$('reportInventory').innerHTML='<div class="notice">No se pudieron cargar las existencias.</div>';$('reportMovements').innerHTML='<div class="notice">No se pudieron cargar los movimientos.</div>';}
+}async function promoverUltimaAuditoria(auditId){
+  const pin=prompt('🔐 PIN de seguridad para establecer el stock real como nuevo punto de partida:');
+  if(pin!=='1212'){alert('PIN incorrecto. No se modificó ningún stock.');return;}
+  if(!confirm('¿Confirmas establecer el stock físico de esta auditoría como nuevo punto de partida? El historial se conservará y solo se registrarán los ajustes necesarios.'))return;
+  try{
+    const {data:items,error}=await supabaseClient.from('physical_audit_items').select('material_id,theoretical,physical').eq('audit_id',auditId);if(error)throw error;
+    const uid=(await supabaseClient.auth.getUser()).data.user?.id;let changes=0;
+    for(const r of (items||[])){const d=Number(r.physical||0)-Number(r.theoretical||0);if(Math.abs(d)<0.000001)continue;const z=await supabaseClient.rpc('registrar_movimiento',{p_module_id:selectedModule.id,p_material_id:r.material_id,p_type:d>0?'Entrada':'Salida',p_quantity:Math.abs(d),p_note:'Ajuste autorizado · nuevo punto de partida por auditoría'});if(z.error)throw z.error;changes++;}
+    await supabaseClient.from('physical_audits').update({applied:true,applied_at:new Date().toISOString(),applied_by:uid}).eq('id',auditId);
+    alert('✅ Nuevo punto de partida establecido. Se ajustaron '+changes+' materiales y el historial de auditorías se conserva.');await cargarReportes();
+  }catch(e){alert('No se pudo establecer el nuevo punto de partida: '+(e.message||e));}
+}
+
+(async function iniciarSesionPersistente(){
+  try{
+    const {data}=await supabaseClient.auth.getSession();
+    if(data&&data.session) await mostrarApp(data.session);
+  }catch(e){
+    console.warn('Sesión persistente no disponible',e);
+  }
+})();
+
+$("loginBtn").addEventListener("click",login);
+$("password").addEventListener("keydown",e=>{if(e.key==="Enter")login();});
+$("logoutBtn").addEventListener("click",logout);
+$("changeModuleBtn").addEventListener("click",volverModulos);
+$("inventoryBtn").addEventListener("click",abrirInventario);
+$("entriesBtn").addEventListener("click",()=>abrirMovimientos("Entrada"));
+$("exitsBtn").addEventListener("click",()=>abrirMovimientos("Salida"));
+$("salesBtn").addEventListener("click",abrirVentas);
+$("saveSaleBtn").addEventListener("click",guardarVenta);
+$("saleSameColor").addEventListener("change",actualizarMismoColorVenta);
+$("saleSlides").addEventListener("change",()=>{const e=document.querySelectorAll(".saleFurnitureType");const hasEmma=[...e].some(x=>x.value==="Cajonera Emma");if(hasEmma&&$("saleSlides").value==="No lleva"){alert("La Cajonera Emma siempre lleva 4 correderas. Selecciona Normales o De extensión.");$("saleSlides").value="Normales";}});
+$("saleFrontColor").addEventListener("change",()=>syncColorVenta($("saleFrontColor")));
+$("saleStructureColor").addEventListener("change",()=>syncColorVenta($("saleStructureColor")));
+$("transferBtn").addEventListener("click",abrirTraspasos);
+$("saveTransferBtn").addEventListener("click",guardarTraspaso);
+$("scrapBtn").addEventListener("click",abrirMermas);
+$("saveScrapBtn").addEventListener("click",guardarMerma);
+$("auditBtn").addEventListener("click",abrirAuditoria);
+$("reportBtn").addEventListener("click",abrirReportes);
+$("refreshReportBtn").addEventListener("click",cargarReportes);
+$("movementBackBtn").addEventListener("click",volverDashboard);
+$("saveMovementBtn").addEventListener("click",guardarMovimiento);
+$("inventoryBackBtn").addEventListener("click",volverDashboard);
+$("saveStockBtn").addEventListener("click",guardarInventario);
+$("categoryFilter").addEventListener("change",llenarMateriales);
+$("inventorySearch").addEventListener("input",filtrarInventario);
+$("inventorySearch").addEventListener("input",filtrarInventario);
+
+window.addEventListener("error",e=>{
+  if(!$("appScreen").classList.contains("hidden")) return;
+  $("message").innerHTML='<div class="error">Error de la aplicación: '+e.message+'</div>';
+});
+
+(async()=>{
+  try{
+    const r=await supabaseClient.auth.getSession();
+    const session=r.data?.session||null;
+    if(session){
+      await mostrarApp(session);
+    }else{
+      $("loginScreen").classList.remove("hidden");
+      $("appScreen").classList.add("hidden");
+    }
+  }catch(e){
+    $("loginScreen").classList.remove("hidden");
+    $("appScreen").classList.add("hidden");
+    $("message").innerHTML='<div class="error">No se pudo comprobar la sesión: '+esc(e.message||e)+'</div>';
+  }
+})();
+</script>
+<script>if("serviceWorker" in navigator && location.protocol.startsWith("http")){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
+</body>
+</html>
